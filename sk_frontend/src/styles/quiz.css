@@ -1,0 +1,120 @@
+/* QUIZ PAGE WRAPPER */
+.quiz-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background-color: #553f9a;
+  font-family: 'Trebuchet MS', Arial, sans-serif;
+}
+
+/* MAIN QUIZ CARD */
+.quiz-page .container {
+  width: 640px;
+  background: white;
+  color: black;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-radius: 10px;
+  padding: 40px 50px;
+  z-index: 1;
+}
+
+.quiz-page hr {
+  height: 2px;
+  border: none;
+  background: #707070;
+}
+
+/* GLASS CIRCLES */
+.quiz-page .round,
+.quiz-page .round-bottom {
+  position: absolute;
+  height: 310px;
+  width: 310px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  box-shadow: 0 0 60px rgba(255, 255, 255, 0.35),
+    inset 0 0 30px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.quiz-page .round {
+  top: -4%;
+  left: -3%;
+}
+
+.quiz-page .round-bottom {
+  bottom: -4%;
+  right: -3%;
+}
+
+/* HEADER */
+.quiz-page .quiz-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quiz-page h1 {
+  color: #553f9a;
+}
+
+/* OPTIONS */
+.quiz-page ul li {
+  display: flex;
+  align-items: center;
+  height: 70px;
+  padding-left: 15px;
+  border: 1px solid #686868;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* BUTTON */
+.quiz-page button {
+  margin: auto;
+  width: 250px;
+  height: 65px;
+  background: #553f9a;
+  color: white;
+  font-size: 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+}
+
+/* STATUS */
+.quiz-page .index {
+  margin: auto;
+  font-size: 18px;
+}
+
+/* ANSWERS */
+.quiz-page .correct {
+  background: #dffff2;
+  border-color: #00d397;
+}
+
+.quiz-page .wrong {
+  background: #ffebeb;
+  border-color: #ff4a4a;
+}
+
+/* TIMER */
+.quiz-page .timer {
+  background: #553f9a;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 16px;
+  font-weight: 600;
+}

@@ -1,0 +1,116 @@
+/* FULL PAGE SPLIT */
+
+.profile-container {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+}
+
+/* LEFT SIDE */
+
+.profile-left {
+  flex: 1;
+  background-color: #553f9a;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-illustration {
+  width: 420px;
+  max-width: 80%;
+}
+
+.left-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.brand-name {
+  margin-top: 24px;
+  font-size: 50px;
+  font-weight: 700;
+  color: white;
+}
+
+/* RIGHT SIDE */
+
+.profile-right {
+  flex: 1;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* BOX */
+
+.profile-box {
+  background: white;
+  padding: 65px;
+  width: 680px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.profile-box h2 {
+  font-size: 40px;
+  color: #553f9a;
+  margin-bottom: 20px;
+}
+
+/* INPUT */
+
+.profile-box input {
+  width: 100%;
+  padding: 22px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 18px;
+}
+
+.profile-box input:focus {
+  outline: none;
+  border-color: #553f9a;
+}
+
+/* BUTTON */
+
+.profile-box button {
+  width: 100%;
+  padding: 22px;
+  background: #553f9a;
+  border: none;
+  color: white;
+  font-size: 20px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.profile-box button:hover {
+  background: #5e4c96;
+}
+
+
+/* ANIMATION SAME AS LOGIN */
+
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInFromLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.slide-in-from-right {
+  animation: slideInFromRight 0.6s forwards;
+}
+
+.slide-in-from-left {
+  animation: slideInFromLeft 0.6s forwards;
+}
