@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import "../styles/quiz.css";
 import { data } from "../assets/data.js";
-import Proctoring from "../components/Proctoring"; // 👈 AI Proctoring Import kiya
+import Proctoring from "../components/Proctoring"; 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Quiz = () => {
   const [index, setIndex] = useState(0);
@@ -113,7 +114,7 @@ const Quiz = () => {
 
       <div className="container">
         <div className="quiz-header">
-          <h1>SkillLink Quiz</h1>
+          <h1>SkilledLink Quiz</h1>
           <div className="timer">⏱ {formatTime()}</div>
         </div>
 

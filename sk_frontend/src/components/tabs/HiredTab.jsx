@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // 🟢 Preview environment ke liye DurationBadge yahan define kiya gaya hai
 const DurationBadge = ({ daysLeft }) => (
@@ -22,7 +23,7 @@ const HiredTab = ({
   const [isPaying, setIsPaying] = useState(false); 
   const [showPricing, setShowPricing] = useState(false); // 👈 Modal dikhane ke liye naya state
 
-  const BASE_URL = "http://localhost:5000/api";
+  
   const getToken = () => localStorage.getItem("token");
 
   // 🚀 PRICING PACKAGES
@@ -38,14 +39,14 @@ const HiredTab = ({
       setLoading(true);
       
       // 1. Fetch Jobs
-      const jobRes = await axios.get(`${BASE_URL}/jobs`, {
+      const jobRes = await axios.get(`${API_URL}/jobs`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       setJobs(jobRes.data.jobs || jobRes.data || []);
 
       // 2. 🚀 THE FIX: Fetch Company Credits accurately from backend
       try {
-        const creditRes = await axios.get(`${BASE_URL}/payment/credits`, {
+        const creditRes = await axios.get(`${API_URL}/payment/credits`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         if (creditRes.data && creditRes.data.credits !== undefined) {
@@ -73,7 +74,7 @@ const HiredTab = ({
       setShowPricing(false); // Payment start hote hi modal band kar do
       
       // 1. Backend se Razorpay Order create karein
-      const orderRes = await axios.post(`${BASE_URL}/payment/create-order`, 
+      const orderRes = await axios.post(`${API_URL}/payment/create-order`, 
         { amount: planAmount }, 
         { headers: { Authorization: `Bearer ${getToken()}` }}
       );
@@ -91,7 +92,7 @@ const HiredTab = ({
         handler: async function (response) {
           try {
             // 3. Payment Verify karein backend par
-            const verifyRes = await axios.post(`${BASE_URL}/payment/verify`, {
+            const verifyRes = await axios.post(`${API_URL}/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -153,7 +154,7 @@ const HiredTab = ({
   const handleRemoveJob = async (id) => {
     if (!window.confirm("Are you sure you want to remove this position? All applicant data linked to it might be affected.")) return;
     try {
-      await axios.delete(`${BASE_URL}/jobs/${id}`, { headers: { Authorization: `Bearer ${getToken()}` }});
+      await axios.delete(`${API_URL}/jobs/${id}`, { headers: { Authorization: `Bearer ${getToken()}` }});
       setSuccessMsg("Job removed successfully ✅");
       setTimeout(() => setSuccessMsg(""), 3000); 
       setJobs(prevJobs => prevJobs.filter(job => job._id !== id && job.id !== id));
@@ -166,7 +167,7 @@ const HiredTab = ({
   // ✅ PAUSE / RESUME 
   const handleTogglePause = async (id) => {
     try {
-      const res = await axios.patch(`${BASE_URL}/jobs/${id}/toggle`, {}, { headers: { Authorization: `Bearer ${getToken()}` }});
+      const res = await axios.patch(`${API_URL}/jobs/${id}/toggle`, {}, { headers: { Authorization: `Bearer ${getToken()}` }});
       setJobs(prevJobs => prevJobs.map(job => (job._id === id || job.id === id) ? { ...job, isPaused: res.data.isPaused ?? !job.isPaused } : job));
     } catch (err) {
       console.log("Error toggling status:", err);

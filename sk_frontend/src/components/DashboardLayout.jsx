@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // 👈 NAYA 1: useNavigate import kiya
+import { useNavigate } from 'react-router-dom';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 import Sidebar from './Sidebar';
 import DashboardTab from './tabs/DashboardTab';
@@ -41,7 +42,7 @@ const DashboardLayout = () => {
   const [talentSkill, setTalentSkill] = useState("");
   const [talentMin, setTalentMin] = useState(0);
 
-  const BASE_URL = "http://localhost:5000/api";
+ 
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -49,7 +50,7 @@ const DashboardLayout = () => {
   // ==========================================
   const fetchJobs = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/jobs`, {
+      const res = await axios.get(`${API_URL}/jobs`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       
@@ -75,7 +76,7 @@ const DashboardLayout = () => {
   // ==========================================
   const togglePause = async (id) => {
     try {
-      const res = await axios.patch(`${BASE_URL}/jobs/${id}/toggle`, {}, {
+      const res = await axios.patch(`${API_URL}/jobs/${id}/toggle`, {}, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
 
@@ -103,7 +104,7 @@ const DashboardLayout = () => {
     if (!window.confirm("Are you sure you want to remove this position?")) return;
 
     try {
-      await axios.delete(`${BASE_URL}/jobs/${id}`, {
+      await axios.delete(`${API_URL}/jobs/${id}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       

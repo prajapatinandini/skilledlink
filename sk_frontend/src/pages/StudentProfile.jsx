@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const StudentProfile = () => {
   const token = localStorage.getItem("token");
@@ -82,7 +83,7 @@ const StudentProfile = () => {
         if (p.profilePhoto) {
           const fullPhotoUrl = p.profilePhoto.startsWith('http') 
             ? p.profilePhoto 
-            : `http://localhost:5000${p.profilePhoto}`;
+            : `${API_URL}${p.profilePhoto}`;
           setPhotoPreview(fullPhotoUrl);
         }
 

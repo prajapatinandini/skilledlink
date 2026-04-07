@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const QUIZ_QS = [
   { q: "What does HTML stand for?", options: ["HyperText Markup Language","HighText Machine Language","HyperText Machine Language","Hyper Transfer Markup Language"], correct: 0 },
@@ -602,7 +603,7 @@ const Landing = () => {
   return (
     <div className="landing-container">
       <aside className="sidebar">
-        <div className="sidebar-logo"><img src="/logo.png" alt="SkillLink" className="logo-img"/><span>SkillLink</span></div>
+        <div className="sidebar-logo"><img src="/logo.png" alt="SkilledLink" className="logo-img"/><span>SkilledLink</span></div>
         <div className="sidebar-divider"/>
         <nav className="sidebar-menu">
           <button className={activeTab==="dashboard"?"active":""} onClick={()=>setActiveTab("dashboard")}>Dashboard</button>

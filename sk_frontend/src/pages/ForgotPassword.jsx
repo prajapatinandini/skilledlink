@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom'; // 👈 useLocation add kiya
+import { useNavigate, useLocation } from 'react-router-dom'; 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1);
@@ -19,7 +20,7 @@ const ForgotPassword = () => {
   const userType = location.state?.role || 'student'; 
   const loginUrl = `/login/${userType}`;
 
-  const BASE_URL = 'http://localhost:5000/api/auth'; 
+  const BASE_URL = `${API_URL}/api/auth`; 
 
   // ==========================================
   // STEP 1: SEND OTP
@@ -30,7 +31,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     try {
-      const res = await axios.post(`${BASE_URL}/forgot-password`, { email });
+      const res = await axios.post(`${API_URL}/forgot-password`, { email });
       setMessage(res.data.message || "OTP sent to your email!");
       setStep(2); 
     } catch (err) {
@@ -49,7 +50,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     try {
-      const res = await axios.post(`${BASE_URL}/verify-reset-otp`, { email, otp });
+      const res = await axios.post(`${API_URL}/verify-reset-otp`, { email, otp });
       setMessage(res.data.message || "OTP verified! Please set a new password.");
       setStep(3); 
     } catch (err) {
@@ -68,7 +69,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     try {
-      const res = await axios.post(`${BASE_URL}/reset-password`, { email, newPassword });
+      const res = await axios.post(`${API_URL}/reset-password`, { email, newPassword });
       alert(res.data.message || `Password reset successful! Redirecting to ${userType} login...`);
       
       // 🚀 YAHAN DYNAMIC REDIRECT HOGA (Student hai toh /login/student, Company hai toh /login/company)
@@ -86,7 +87,7 @@ const ForgotPassword = () => {
       
       <div style={{ flex: 1, backgroundColor: '#553f9a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
         <div style={{ fontSize: '100px', marginBottom: '20px' }}>👩‍💻</div> 
-        <h1 style={{ fontSize: '48px', fontWeight: 'bold', margin: 0 }}>SkillLink</h1>
+        <h1 style={{ fontSize: '48px', fontWeight: 'bold', margin: 0 }}>SkilledLink</h1>
         <p style={{ fontSize: '18px', marginTop: '10px', opacity: 0.8 }}>Recover your account</p>
       </div>
 

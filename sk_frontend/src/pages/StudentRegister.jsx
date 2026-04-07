@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/studentRegister.css";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -48,7 +49,7 @@ const Register = () => {
     try {
       // 1. Backend ko SIRF email bhejo OTP bhejne ke liye
       const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        `${API_URL}/api/auth/register`,
         { email } // 👈 Sirf email ja raha hai
       );
 
@@ -78,8 +79,8 @@ const Register = () => {
       {/* LEFT SIDE */}
       <div className="register-left">
         <form className="register-box" onSubmit={handleSubmit}>
-          <h2>SkillLink Register</h2>
-          <p>Create your SkillLink account</p>
+          <h2>SkilledLink Register</h2>
+          <p>Create your SkilledLink account</p>
 
           <input
             type="text"
@@ -133,7 +134,7 @@ const Register = () => {
             alt="Register Illustration"
             className="register-illustration"
           />
-          <h1 className="brand-name">SkillLink</h1>
+          <h1 className="brand-name">SkilledLink</h1>
         </div>
       </div>
 

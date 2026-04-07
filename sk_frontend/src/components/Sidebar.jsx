@@ -1,4 +1,3 @@
-// components/Sidebar.jsx
 
 import { useNavigate } from "react-router-dom";
 
@@ -17,8 +16,8 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <img src="/logo.png" alt="SkillLink" className="logo-img" />
-        <span>SkillLink</span>
+        <img src="/logo.png" alt="SkilledLink" className="logo-img" />
+        <span>SkilledLink</span>
       </div>
       <div className="sidebar-divider" />
       <nav className="sidebar-menu">

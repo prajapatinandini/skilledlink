@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import Proctoring from "../components/Proctoring"; // 👈 New Import
+import Proctoring from "../components/Proctoring"; 
 
 const Assessment = () => {
   const navigate = useNavigate();
   const { testId: attemptIdFromUrl } = useParams();
 
-  const BASE_URL = "http://localhost:5000";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const getAuthHeader = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -163,7 +163,7 @@ const Assessment = () => {
     try {
       setLoading(true);
       setLoadingText("Initializing Payment... 💳");
-      const { data: order } = await axios.post(`${BASE_URL}/api/payment/create-order`, { amount }, getAuthHeader());
+      const { data: order } = await axios.post(`${API_URL}/api/payment/create-order`, { amount }, getAuthHeader());
       const options = {
         key: "rzp_test_SSG3SZQ2sAIrTe", 
         amount: order.amount,
@@ -233,7 +233,7 @@ const Assessment = () => {
         repoUrl: p.url,
         attemptId: attemptIdFromUrl 
       }));
-      const addRes = await axios.post(`${BASE_URL}/api/projects/add-multiple`, {
+      const addRes = await axios.post(`${API_URL}/api/projects/add-multiple`, {
         projects: projectsPayload
       }, getAuthHeader());
       const elem = document.documentElement;
@@ -250,7 +250,7 @@ const Assessment = () => {
         });
       }
       setLoadingText("Loading Aptitude Test... 📝");
-      const aptRes = await axios.get(`${BASE_URL}/api/assessment/aptitude/${attemptIdFromUrl}`, getAuthHeader());
+      const aptRes = await axios.get(`${API_URL}/api/assessment/aptitude/${attemptIdFromUrl}`, getAuthHeader());
       if (aptRes.data && aptRes.data.questions) {
         setMcqData(aptRes.data.questions);
         setPhase("mcq");
@@ -288,8 +288,8 @@ const Assessment = () => {
     try {
       setLoading(true);
       setLoadingText("Saving MCQ Answers & Loading Coding Round... 💻");
-      await axios.post(`${BASE_URL}/api/assessment/aptitude/submit/${attemptIdFromUrl}`, { answers: selectedAnswers }, getAuthHeader());
-      const codeRes = await axios.get(`${BASE_URL}/api/assessment/coding/${attemptIdFromUrl}`, getAuthHeader());
+      await axios.post(`${API_URL}/api/assessment/aptitude/submit/${attemptIdFromUrl}`, { answers: selectedAnswers }, getAuthHeader());
+      const codeRes = await axios.get(`${API_URL}/api/assessment/coding/${attemptIdFromUrl}`, getAuthHeader());
       setCodingProblems(codeRes.data);
       setCodes(codeRes.data.map(q => q.defaultCode || "// Write your code here...\n"));
       setPhase("coding");
@@ -330,9 +330,9 @@ const Assessment = () => {
         questionId: prob._id,
         code: codes[i]
       }));
-      await axios.post(`${BASE_URL}/api/assessment/coding/submit/${attemptIdFromUrl}`, { codingAnswers }, getAuthHeader());
+      await axios.post(`${API_URL}/api/assessment/coding/submit/${attemptIdFromUrl}`, { codingAnswers }, getAuthHeader());
       setLoadingText("Calculating MCQ & Coding Scores... 📊");
-      const resultRes = await axios.get(`${BASE_URL}/api/assessment/result/${attemptIdFromUrl}`, getAuthHeader());
+      const resultRes = await axios.get(`${API_URL}/api/assessment/result/${attemptIdFromUrl}`, getAuthHeader());
       setLoadingText("AI is finalizing your Project Score... 🤖 (Almost done!)");
       let realProjectScore = 0;
       let evalId = null; 
@@ -340,7 +340,7 @@ const Assessment = () => {
       let retries = 10; 
       while (retries > 0 && !aiChecked) {
         try {
-          const evalRes = await axios.get(`${BASE_URL}/api/evaluation/project/${submittedProjectId}`, getAuthHeader());
+          const evalRes = await axios.get(`${API_URL}/api/evaluation/project/${submittedProjectId}`, getAuthHeader());
           if (evalRes.data) {
              evalId = evalRes.data._id || (evalRes.data.evaluation && evalRes.data.evaluation._id);
              realProjectScore = parseFloat(evalRes.data.finalScore || (evalRes.data.evaluation && evalRes.data.evaluation.finalScore) || 0);
@@ -358,7 +358,7 @@ const Assessment = () => {
       setLoadingText("Saving Final Results securely... 🔒");
       try {
         if (evalId) {
-          await axios.post(`${BASE_URL}/api/dashboard/final-submit/${attemptIdFromUrl}`, {
+          await axios.post(`${API_URL}/api/dashboard/final-submit/${attemptIdFromUrl}`, {
             projectScore: realProjectScore,
             finalScore: calculatedFinalScore
           }, getAuthHeader());

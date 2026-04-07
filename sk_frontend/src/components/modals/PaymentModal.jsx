@@ -3,7 +3,7 @@ import axios from "axios";
 
 const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
   // ✅ FIX 1: Using .env for API URL (Fallback to localhost for safety)
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -16,7 +16,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       setLoading(true);
 
-      const { data: order } = await axios.post(`${BASE_URL}/api/payment/create-order`, { amount }, getAuthHeader());
+      const { data: order } = await axios.post(`${API_URL}/api/payment/create-order`, { amount }, getAuthHeader());
 
       const options = {
         // 🚨 FIX 2: Using .env for Razorpay Key ID
@@ -28,7 +28,7 @@ const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
         order_id: order.id,
         handler: async function (response) {
           try {
-            await axios.post(`${BASE_URL}/api/payment/verify`, {
+            await axios.post(`${API_URL}/api/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,

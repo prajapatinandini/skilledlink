@@ -5,7 +5,7 @@ const DashboardTab = ({ onStudentClick }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -16,7 +16,7 @@ const DashboardTab = ({ onStudentClick }) => {
       try {
         setLoading(true);
         // 🛠️ Calling the dashboard route we created earlier
-        const res = await axios.get(`${BASE_URL}/dashboard`, {
+        const res = await axios.get(`${API_URL}/dashboard`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         setData(res.data);

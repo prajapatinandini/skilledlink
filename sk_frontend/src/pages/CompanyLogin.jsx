@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/companyLogin.css";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -39,7 +40,7 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        `${API_URL}/api/auth/login`,
         {
           email,
           password,
@@ -79,13 +80,13 @@ const Login = () => {
             alt="Login Illustration"
             className="login-illustration"
           />
-          <h1 className="brand-name">SkillLink</h1>
+          <h1 className="brand-name">SkilledLink</h1>
         </div>
       </div>
 
       <div className="login-right">
         <form className="login-box" onSubmit={handleSubmit}>
-          <h2>SkillLink Login</h2>
+          <h2>SkilledLink Login</h2>
           <p>Welcome back! Please login to your account</p>
 
           <input

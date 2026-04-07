@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/verifyOtp.css";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const VerifyOtp = () => {
   const [otp, setOtp] = useState("");
@@ -25,7 +26,7 @@ const VerifyOtp = () => {
     try {
       // 👈 NAYA: Ab API ko sirf email nahi, balki saara data aur OTP ek saath dena hai
       const res = await axios.post(
-        "http://localhost:5000/api/auth/verify-otp", // Make sure aapka backend route exactly yahi ho (verifyOtp ya verify-otp)
+        `${API_URL}/api/auth/verify-otp`, // Make sure aapka backend route exactly yahi ho (verifyOtp ya verify-otp)
         {
           ...userData, // Yeh line name, email, password, role sab daal degi
           otp: otp,
@@ -81,7 +82,7 @@ const VerifyOtp = () => {
           />
 
           <h1 className="brand-name">
-            SkillLink
+            SkilledLink
           </h1>
 
         </div>

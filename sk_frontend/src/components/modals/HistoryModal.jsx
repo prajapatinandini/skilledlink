@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
 import ScoreBar from '../common/ScoreBar';
 import { STATUS_CLS } from '../../data/constants';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const HistoryModal = ({
   historyJob,
@@ -14,7 +15,7 @@ const HistoryModal = ({
   const [histData, setHistData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://localhost:5000/api";
+  
 
   // ==========================================
   // 🟢 FETCH DATA API
@@ -27,7 +28,7 @@ const HistoryModal = ({
 
         const jobId = historyJob._id || historyJob.id;
         
-        const res = await axios.get(`${BASE_URL}/dashboard/attempts/${jobId}`, {
+        const res = await axios.get(`${API_URL}/dashboard/attempts/${jobId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -78,7 +79,7 @@ const HistoryModal = ({
       
       // Backend api hit karega jahan email bhejte hain
       const res = await axios.patch(
-        `${BASE_URL}/application/${attemptId}/status`, // 👈 Backend route
+        `${API_URL}/application/${attemptId}/status`, // 👈 Backend route
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

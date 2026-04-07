@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/companyProfile.css";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const CompanyProfileCreate = () => {
   const [form, setForm] = useState({
@@ -26,7 +27,7 @@ const CompanyProfileCreate = () => {
       try {
         // 🔹 1. Get user
         const userRes = await fetch(
-          "http://localhost:5000/api/auth/me",
+          `${API_URL}/api/auth/me`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -41,7 +42,7 @@ const CompanyProfileCreate = () => {
 
         // 🔹 2. Get company profile
         const profileRes = await fetch(
-          "http://localhost:5000/api/company/profile",
+          `${API_URL}/api/company/profile`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -98,7 +99,7 @@ const CompanyProfileCreate = () => {
 
     try {
       const res = await fetch(
-        "http://localhost:5000/api/company/create-profile",
+        `${API_URL}/api/company/create-profile`,
         {
           method: "POST",
           headers: {
@@ -152,7 +153,7 @@ const CompanyProfileCreate = () => {
             className="login-illustration"
             alt="illustration"
           />
-          <h1 className="brand-name">SkillLink</h1>
+          <h1 className="brand-name">SkilledLink</h1>
         </div>
       </div>
 

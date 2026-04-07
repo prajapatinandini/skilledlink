@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/companyRegister.css";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const Register = () => {
 
@@ -57,7 +58,7 @@ const Register = () => {
 
       // 1. Backend ko SIRF email bhejo OTP bhejne ke liye
       const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        `${API_URL}/api/auth/register`,
         { email } // 👈 Sirf email bhej rahe hain
       );
 
@@ -97,8 +98,8 @@ const Register = () => {
           onSubmit={handleSubmit}
         >
 
-          <h2>SkillLink Register</h2>
-          <p>Create your SkillLink account</p>
+          <h2>SkilledLink Register</h2>
+          <p>Create your SkilledLink account</p>
 
 
           <input
@@ -204,7 +205,7 @@ const Register = () => {
           />
 
           <h1 className="brand-name">
-            SkillLink
+            SkilledLink
           </h1>
 
         </div>

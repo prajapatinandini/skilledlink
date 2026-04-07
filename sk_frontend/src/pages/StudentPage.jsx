@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PaymentModal from "../components/modals/PaymentModal";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const renderSafe = (val) => {
   if (val === undefined || val === null) return "N/A";
@@ -98,7 +99,7 @@ const ProfileView = ({ profile, onEdit }) => {
             <h3 style={cardTitleStyle}>📄 Professional Resume</h3>
             <div style={{ marginTop: '15px' }}>
               {profile.resumeUrl ? (
-                <a href={`http://localhost:5000${renderSafe(profile.resumeUrl)}`} target="_blank" rel="noreferrer" style={{...btnStyle, display:'inline-block'}}>Download Resume</a>
+                <a href={`${API_URL}${renderSafe(profile.resumeUrl)}`} target="_blank" rel="noreferrer" style={{...btnStyle, display:'inline-block'}}>Download Resume</a>
               ) : (
                 <div style={{ textAlign: 'center', padding: '10px', border: '1px dashed #ccc', borderRadius: '10px' }}>
                   <p style={{color: '#999', fontSize: '13px', margin: '0 0 10px 0'}}>Resume upload nahi hai.</p>
@@ -129,20 +130,20 @@ const StudentPage = () => {
   const [isApplying, setIsApplying] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false); 
 
-  const BASE_URL = "http://localhost:5000/api";
+  
 
   const fetchDashboardData = async () => {
     if (!token) { navigate("/login/student"); return; }
     try {
-      const profRes = await axios.get(`${BASE_URL}/student/me`, { headers: { Authorization: `Bearer ${token}` } });
+      const profRes = await axios.get(`${API_URL}/student/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!profRes.data) { navigate("/student/profile"); return; }
       setProfile(profRes.data);
 
-      const jobRes = await axios.get(`${BASE_URL}/jobs/all`, { headers: { Authorization: `Bearer ${token}` } });
+      const jobRes = await axios.get(`${API_URL}/jobs/all`, { headers: { Authorization: `Bearer ${token}` } });
       setJobsData(Array.isArray(jobRes.data) ? jobRes.data : []);
 
       try {
-        const credRes = await axios.get(`${BASE_URL}/auth/user-credits`, { headers: { Authorization: `Bearer ${token}` } });
+        const credRes = await axios.get(`${API_URL}/auth/user-credits`, { headers: { Authorization: `Bearer ${token}` } });
         setCredits(credRes.data.credits || 0);
       } catch (e) {
         if(profRes.data?.user?.credits !== undefined) setCredits(profRes.data.user.credits);
@@ -166,7 +167,7 @@ const StudentPage = () => {
   const handleApply = async (jobId) => {
     try {
       setIsApplying(true);
-      const res = await axios.post(`${BASE_URL}/assessment/start/${jobId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`${API_URL}/assessment/start/${jobId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
       if (res.data && res.data.attemptId) { navigate(`/assessment/${res.data.attemptId}`); } 
       else { alert("Failed to generate assessment attempt."); }
     } catch (error) {
@@ -183,7 +184,7 @@ const StudentPage = () => {
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSuccess={() => { setShowPaymentModal(false); fetchDashboardData(); if (selectedJob) handleApply(selectedJob._id); }} />
 
       <aside style={sidebarStyle}>
-        <div style={{ fontSize: '26px', fontWeight: '900', marginBottom: '50px', color: '#fff' }}>SkillLink</div>
+        <div style={{ fontSize: '26px', fontWeight: '900', marginBottom: '50px', color: '#fff' }}>SkilledLink</div>
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <button style={{ ...sideBtnStyle, background: activeTab === 'profile' ? 'rgba(255,255,255,0.15)' : 'transparent' }} onClick={() => setActiveTab('profile')}>👤 My Profile</button>
           <button style={{ ...sideBtnStyle, background: activeTab === 'jobs' ? 'rgba(255,255,255,0.15)' : 'transparent' }} onClick={() => { setActiveTab('jobs'); setViewLevel("COMPANY_LIST"); }}>🏢 Job Board</button>

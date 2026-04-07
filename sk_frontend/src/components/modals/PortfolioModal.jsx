@@ -6,7 +6,7 @@ const PortfolioModal = ({ student, onClose }) => {
   const [portfolioData, setPortfolioData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://localhost:5000/api";
+ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   // API Integration: Modal open hote hi student ki detail mangwana
   useEffect(() => {
@@ -19,7 +19,7 @@ const PortfolioModal = ({ student, onClose }) => {
         const studentId = student.id || student._id;
         
         // 🟢 NAYA URL: Ab backend ke dashboardRoutes.js se match karega
-        const res = await axios.get(`${BASE_URL}/dashboard/portfolio/${studentId}`, {
+        const res = await axios.get(`${API_URL}/dashboard/portfolio/${studentId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

@@ -44,7 +44,7 @@ const sendStatusEmail = async (to, studentName, status, companyName) => {
             <p>The HR team will contact you shortly with further onboarding details.</p>
             <br/>
             <p>Best Regards,</p>
-            <p><strong>SkillLink Team</strong></p>
+            <p><strong>SkilledLink Team</strong></p>
         </div>
       `;
     } 
@@ -57,7 +57,7 @@ const sendStatusEmail = async (to, studentName, status, companyName) => {
             <p>Keep learning and applying. We wish you the best for your future endeavors!</p>
             <br/>
             <p>Best Regards,</p>
-            <p><strong>SkillLink Team</strong></p>
+            <p><strong>SkilledLink Team</strong></p>
         </div>
       `;
     } 
@@ -66,7 +66,7 @@ const sendStatusEmail = async (to, studentName, status, companyName) => {
     }
 
     await transporter.sendMail({
-      from: `"SkillLink" <${process.env.EMAIL_USER}>`,
+      from: `"SkilledLink" <${process.env.EMAIL_USER}>`,
       to: to,
       subject: subject,
       html: htmlContent,

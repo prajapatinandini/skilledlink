@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // 🟢 Preview environment ke liye DIFF yahan define kiya gaya hai
 const DIFF = ["Easy", "Medium", "Hard"];
@@ -30,7 +31,7 @@ const HireModal = ({ onClose, onSuccess }) => {
   const [formErrors, setFormErrors] = useState({});
   const [quizErrors, setQuizErrors] = useState({});
 
-  const BASE_URL = "http://localhost:5000/api";
+ 
   const getToken = () => localStorage.getItem("token");
 
   // --- HANDLERS ---
@@ -140,7 +141,7 @@ const HireModal = ({ onClose, onSuccess }) => {
       };
 
       // Ensure that this endpoint matches your backend job creation route
-      const response = await axios.post(`${BASE_URL}/jobs/create`, payload, {
+      const response = await axios.post(`${API_URL}/jobs/create`, payload, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           "Content-Type": "application/json"

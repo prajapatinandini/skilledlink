@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const StudentDetailModal = ({ applicant, onBack, onClose }) => {
   const [view, setView] = useState(null);
@@ -11,7 +12,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
   const [profileData, setProfileData] = useState(null); 
   const [loadingProjects, setLoadingProjects] = useState(false);
 
-  const BASE_URL = "http://localhost:5000/api";
+  
   const getToken = () => localStorage.getItem("token");
 
   // 1. DATA MAPPING
@@ -59,7 +60,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
         const token = getToken();
 
         // 1. Fetch Projects & Evaluation (Yahan 'Attempt ID' lagta hai jo ki applicant.id hai)
-        const projRes = await axios.get(`${BASE_URL}/dashboard/projects/${applicant.id}`, {
+        const projRes = await axios.get(`${API_URL}/dashboard/projects/${applicant.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProjects(projRes.data.projects || []);
@@ -69,7 +70,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
         const studentId = applicant.rawAttemptData?.student?._id || applicant.rawAttemptData?.student;
 
         if (studentId) {
-          const portRes = await axios.get(`${BASE_URL}/dashboard/portfolio/${studentId}`, {
+          const portRes = await axios.get(`${API_URL}/dashboard/portfolio/${studentId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setProfileData(portRes.data);
@@ -94,7 +95,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
     try {
       setLoadingAction(true);
       // 🔥 Yahan '/dashboard/attempt' ki jagah '/application' aayega 🔥
-      await axios.patch(`${BASE_URL}/application/${applicant.id}/status`, { status: newStatus }, {
+      await axios.patch(`${API_URL}/application/${applicant.id}/status`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       alert(`Student successfully marked as ${newStatus} and email sent! 📧🎉`);

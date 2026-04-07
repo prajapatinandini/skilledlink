@@ -8,7 +8,7 @@ const AnalyticsTab = () => {
   const P = "#553f9a";
   const PL = "#8573cc";
 
-  const BASE_URL = "http://localhost:5000/api";
+ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -19,7 +19,7 @@ const AnalyticsTab = () => {
       try {
         setLoading(true);
         // 🛠️ Updated to match dashboard routes. Assuming '/dashboard/analytics'
-        const res = await axios.get(`${BASE_URL}/dashboard/analytics`, {
+        const res = await axios.get(`${API_URL}/dashboard/analytics`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
 

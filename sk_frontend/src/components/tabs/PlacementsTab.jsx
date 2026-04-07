@@ -5,7 +5,7 @@ const PlacementsTab = () => {
   const [placements, setPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -18,7 +18,7 @@ const PlacementsTab = () => {
         const token = getToken();
         
         // 1. Get all placements
-        const res = await axios.get(`${BASE_URL}/dashboard/placements`, {
+        const res = await axios.get(`${API_URL}/dashboard/placements`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -32,7 +32,7 @@ const PlacementsTab = () => {
             
             if (studentId) {
               try {
-                const portRes = await axios.get(`${BASE_URL}/dashboard/portfolio/${studentId}`, {
+                const portRes = await axios.get(`${API_URL}/dashboard/portfolio/${studentId}`, {
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 profileData = portRes.data;

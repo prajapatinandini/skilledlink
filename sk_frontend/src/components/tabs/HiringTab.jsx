@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-
-// 🔴 Apne VS Code mein is import ko UNCOMMENT karein agar external file mein hai
-// import DurationBadge from '../common/DurationBadge';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // 🟢 Preview environment ke liye DurationBadge yahan define kiya gaya hai
 const DurationBadge = ({ daysLeft }) => (
@@ -15,7 +13,7 @@ const HiringTab = ({ onOpenHistory }) => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://localhost:5000/api";
+
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -26,7 +24,7 @@ const HiringTab = ({ onOpenHistory }) => {
       try {
         setLoading(true);
         // Assuming your route is GET /api/jobs
-        const res = await axios.get(`${BASE_URL}/jobs`, {
+        const res = await axios.get(`${API_URL}/jobs`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         

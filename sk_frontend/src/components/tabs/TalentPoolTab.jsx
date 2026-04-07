@@ -15,7 +15,7 @@ const TalentPoolTab = ({
   const [allSkills, setAllSkills] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const BASE_URL = "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -26,7 +26,7 @@ const TalentPoolTab = ({
       try {
         setLoading(true);
         // 🛠️ Updated API Route: Matching the dashboard pattern
-        const res = await axios.get(`${BASE_URL}/dashboard/talent-pool`, {
+        const res = await axios.get(`${API_URL}/dashboard/talent-pool`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         
