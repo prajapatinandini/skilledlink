@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/studentLogin.css";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = "https://skilledlink-f4lp.onrender.com" || "http://localhost:5000";
 
 const Login = () => {
   const [email, setEmail] = useState("");
