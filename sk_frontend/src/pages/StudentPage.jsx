@@ -11,7 +11,7 @@ const renderSafe = (val) => {
   return String(val);
 };
 
-// 🟢 PROFILE VIEW COMPONENT
+// 🟢 PROFILE VIEW COMPONENT (Unchanged)
 const ProfileView = ({ profile, onEdit }) => {
   if (!profile) return <div style={{ padding: '20px', textAlign: 'center' }}>Profile details load ho rahi hain...</div>;
   
@@ -62,7 +62,6 @@ const ProfileView = ({ profile, onEdit }) => {
             </div>
           </div>
 
-          {/* 🟢 ACHIEVEMENTS & EXPERIENCE DONO YAHAN HAIN */}
           <div style={cardStyle}>
             <h3 style={cardTitleStyle}>💼 Work Experience</h3>
             <p style={{ color: '#444', lineHeight: '1.7', whiteSpace: 'pre-line', marginTop: '10px' }}>
@@ -209,6 +208,7 @@ const StudentPage = () => {
           
           {activeTab === 'jobs' && (
             <>
+              {/* 🟢 VIEW 1: COMPANY LIST */}
               {viewLevel === "COMPANY_LIST" && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
                   {uniqueCompanies.length > 0 ? uniqueCompanies.map((comp) => (
@@ -216,6 +216,14 @@ const StudentPage = () => {
                       <div style={{ fontSize: '45px', marginBottom: '15px' }}>🏢</div>
                       <h3 style={{ color: '#2d1f6e', margin: '0 0 5px 0' }}>{comp.companyName || comp.name}</h3>
                       <p style={{ color: '#553f9a', fontWeight: 'bold', fontSize: '14px' }}>{comp.industry || "Technology"}</p>
+                      
+                      {/* ✅ NEW: Short Company Description */}
+                      {comp.description && (
+                        <p style={{ color: '#666', fontSize: '13px', marginTop: '10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {comp.description}
+                        </p>
+                      )}
+
                       <p style={{ color: '#999', fontSize: '13px', marginTop: '10px' }}>📍 {comp.location || "Multiple Locations"}</p>
                       <button style={viewBtnStyle}>View Openings</button>
                     </div>
@@ -223,10 +231,38 @@ const StudentPage = () => {
                 </div>
               )}
 
+              {/* 🟢 VIEW 2: JOB LIST FOR A SPECIFIC COMPANY */}
               {viewLevel === "JOB_LIST" && (
                 <div>
                   <button onClick={() => setViewLevel("COMPANY_LIST")} style={backLinkStyle}>← Back to All Companies</button>
-                  <h2 style={{ color: '#2d1f6e', margin: '20px 0' }}>Available Roles at {selectedCompany?.companyName || selectedCompany?.name}</h2>
+                  
+                  {/* ✅ NEW: Company Details Header Box */}
+                  <div style={{ background: '#fff', padding: '25px', borderRadius: '15px', border: '1px solid #ede8fb', marginBottom: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <h2 style={{ color: '#2d1f6e', margin: '0 0 10px 0' }}>About {selectedCompany?.companyName || selectedCompany?.name}</h2>
+                        <p style={{ color: '#553f9a', fontWeight: 'bold', fontSize: '14px', marginBottom: '10px' }}>
+                          {selectedCompany?.industry} • {selectedCompany?.location}
+                        </p>
+                      </div>
+                      
+                      {/* ✅ NEW: Website Button */}
+                      {selectedCompany?.website && (
+                        <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer" style={{ background: '#f3f0ff', color: '#553f9a', padding: '10px 16px', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                          🌐 Visit Website ↗
+                        </a>
+                      )}
+                    </div>
+                    
+                    {/* ✅ NEW: Full Description */}
+                    {selectedCompany?.description && (
+                      <p style={{ color: '#444', lineHeight: '1.6', fontSize: '15px', marginTop: '15px', whiteSpace: 'pre-line' }}>
+                        {selectedCompany.description}
+                      </p>
+                    )}
+                  </div>
+
+                  <h3 style={{ color: '#2d1f6e', marginBottom: '20px' }}>Available Openings</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                     {jobsData.filter(j => j.company?._id === selectedCompany?._id).map((job) => (
                       <div key={job._id} style={{ ...cardStyle, borderLeft: '6px solid #553f9a' }} onClick={() => { setSelectedJob(job); setViewLevel("JOB_DETAILS"); }}>
@@ -239,6 +275,7 @@ const StudentPage = () => {
                 </div>
               )}
 
+              {/* 🟢 VIEW 3: JOB DETAILS */}
               {viewLevel === "JOB_DETAILS" && (
                 <div style={cardStyle}>
                   <button onClick={() => setViewLevel("JOB_LIST")} style={backLinkStyle}>← Back to All Roles</button>

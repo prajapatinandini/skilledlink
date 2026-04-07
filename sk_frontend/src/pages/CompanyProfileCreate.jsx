@@ -12,6 +12,7 @@ const CompanyProfileCreate = () => {
     hrEmail: "",
     hrPhone: "",
     hiringRoles: "",
+    description: "", // ✅ ADDED: Company Description
   });
 
   const [loading, setLoading] = useState(false);
@@ -64,6 +65,7 @@ const CompanyProfileCreate = () => {
           hrEmail: profileData.hrEmail || userData.email || "",
           hrPhone: profileData.hrPhone || "",
           hiringRoles: profileData.hiringRoles?.join(", ") || "",
+          description: profileData.description || "", // ✅ FETCH: Description
         });
 
       } catch (err) {
@@ -166,9 +168,11 @@ const CompanyProfileCreate = () => {
             required
           />
 
+          {/* ✅ Type 'url' kar diya hai aur placeholder updated */}
           <input
+            type="url"
             name="website"
-            placeholder="Website"
+            placeholder="Website (e.g. https://example.com)"
             value={form.website}
             onChange={handleChange}
           />
@@ -235,6 +239,24 @@ const CompanyProfileCreate = () => {
             placeholder="Hiring Roles (e.g. Developer, Designer)"
             value={form.hiringRoles}
             onChange={handleChange}
+          />
+
+          {/* ✅ NAYA: Description Box (CSS iske andar hi likh di hai) */}
+          <textarea
+            name="description"
+            placeholder="About Company (Description)"
+            value={form.description}
+            onChange={handleChange}
+            rows="3"
+            style={{
+              padding: '12px',
+              borderRadius: '8px',
+              border: '1px solid #ccc',
+              marginTop: '10px',
+              width: '100%',
+              fontFamily: 'inherit',
+              marginBottom: '15px'
+            }}
           />
 
           <button type="submit" disabled={loading} style={{ opacity: loading ? 0.7 : 1 }}>

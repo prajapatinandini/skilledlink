@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/verifyOtp.css";
@@ -9,26 +9,35 @@ const VerifyOtp = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const email = location.state?.email;
+  // 👈 NAYA: Pichle page se bheja gaya pura data (bag) nikal liya
+  const userData = location.state;
+
+  // Ek chhota sa check: Agar koi direct URL daal kar is page par aa jaye, toh usko wapas register pe bhej do
+  useEffect(() => {
+    if (!userData || !userData.email) {
+      navigate("/register"); // Aap apne register page ka path daal dijiyega agar alag hai
+    }
+  }, [userData, navigate]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
 
     try {
+      // 👈 NAYA: Ab API ko sirf email nahi, balki saara data aur OTP ek saath dena hai
       const res = await axios.post(
-        "http://localhost:5000/api/auth/verify-otp",
+        "http://localhost:5000/api/auth/verify-otp", // Make sure aapka backend route exactly yahi ho (verifyOtp ya verify-otp)
         {
-          email,
-          otp,
+          ...userData, // Yeh line name, email, password, role sab daal degi
+          otp: otp,
         }
       );
 
-      alert(res.data.message);
+      alert(res.data.message); // "Account verified and created successfully"
 
       navigate("/login/student");
 
     } catch (err) {
-      alert(err.response?.data?.message);
+      alert(err.response?.data?.message || "OTP verification failed");
     }
   };
 
@@ -68,6 +77,7 @@ const VerifyOtp = () => {
           <img
             src="/register-illustration.png"
             className="register-illustration"
+            alt="Illustration"
           />
 
           <h1 className="brand-name">

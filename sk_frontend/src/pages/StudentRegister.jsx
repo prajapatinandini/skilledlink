@@ -36,7 +36,7 @@ const Register = () => {
     setTimeout(() => navigate("/login/student"), 500);
   };
 
-  // ✅ REGISTER API
+  // ✅ UPDATED REGISTER API (2-Step Flow)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -46,21 +46,22 @@ const Register = () => {
     }
 
     try {
+      // 1. Backend ko SIRF email bhejo OTP bhejne ke liye
       const res = await axios.post(
         "http://localhost:5000/api/auth/register",
-        {
-          name,
-          email,
-          password,
-          role: "student",
-        }
+        { email } // 👈 Sirf email ja raha hai
       );
 
       alert(res.data.message);
 
-      // go to OTP page
+      // 2. MAGIC: Dusre page par jao, aur saara data ek "bag" (state) mein bhar ke le jao
       navigate("/verify-otp", {
-        state: { email },
+        state: { 
+          name, 
+          email, 
+          password, 
+          role: "student" 
+        },
       });
 
     } catch (err) {

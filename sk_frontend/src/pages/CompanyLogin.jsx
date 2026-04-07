@@ -33,7 +33,7 @@ const Login = () => {
     setTimeout(() => navigate("/register/company"), 500);
   };
 
-  // ✅ LOGIN API
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -48,13 +48,18 @@ const Login = () => {
 
       console.log(res.data);
 
-      // save token
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
 
-      // 🚨 FIX: Redirect strictly to Dashboards matching App.jsx routes!
+      // 👈 NAYA LOGIC: App.jsx wale exact rasto se match kiya
       if (res.data.role === "company") {
-        navigate("/company/dashboard"); // ✅ YAHAN FIX KIYA HAI!
+        if (res.data.isProfileComplete) {
+          // Profile poori hai -> Seedha Dashboard
+          navigate("/company/dashboard"); // ✅ FIXED
+        } else {
+          // Profile adhoori hai -> Profile Setup page 
+          navigate("/company/create-profile"); // ✅ FIXED
+        }
       } else {
         navigate("/student"); 
       }

@@ -44,7 +44,7 @@ const Register = () => {
   };
 
 
-  // submit + API
+  // ✅ UPDATED REGISTER API (2-Step Flow for Company)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -55,23 +55,24 @@ const Register = () => {
 
     try {
 
+      // 1. Backend ko SIRF email bhejo OTP bhejne ke liye
       const res = await axios.post(
         "http://localhost:5000/api/auth/register",
-        {
-          name,
-          email,
-          password,
-          role: "company",
-          companyName: name,
-          companySize: companySize
-        }
+        { email } // 👈 Sirf email bhej rahe hain
       );
 
       alert(res.data.message);
 
-      // OTP page
+      // 2. MAGIC: Dusre page par jao, aur saari Company Details bag mein le jao
       navigate("/verify-otp", {
-        state: { email }
+        state: { 
+          name, 
+          email, 
+          password, 
+          role: "company", 
+          companyName: name, 
+          companySize: companySize 
+        }
       });
 
     } catch (err) {

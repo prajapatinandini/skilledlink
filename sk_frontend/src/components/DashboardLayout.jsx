@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // 👈 NAYA 1: useNavigate import kiya
 
 import Sidebar from './Sidebar';
 import DashboardTab from './tabs/DashboardTab';
@@ -14,13 +15,13 @@ import StudentDetailModal from './modals/StudentDetailModal';
 import PortfolioModal from './modals/PortfolioModal';
 
 const DashboardLayout = () => {
+  const navigate = useNavigate(); // 👈 NAYA 2: navigate ko define kiya
+
   // Tab state
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // 🟢 Global Jobs State
   const [jobs, setJobs] = useState([]);
-  // pausedJobs ab alag se rakhne ki zaroorat nahi hai agar backend har job ke andar isPaused: true/false bhej raha hai, 
-  // lekin UI toggle instant dikhane ke liye hum isse maintain kar sakte hain.
   const [pausedJobs, setPausedJobs] = useState(new Set());
 
   // Modal states
@@ -55,7 +56,6 @@ const DashboardLayout = () => {
       const fetchedJobs = res.data.jobs || res.data || [];
       setJobs(fetchedJobs);
 
-      // Backend se jo jobs 'paused' aayin hain unko Set me dalna
       const paused = new Set();
       fetchedJobs.forEach(job => {
         if (job.isPaused) paused.add(job._id || job.id);
@@ -75,21 +75,17 @@ const DashboardLayout = () => {
   // ==========================================
   const togglePause = async (id) => {
     try {
-      // 🛠️ API URL UPDATE: Pichli baar humne /toggle define kiya tha backend route ke liye
       const res = await axios.patch(`${BASE_URL}/jobs/${id}/toggle`, {}, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
 
-      // Update frontend state instantly
       setPausedJobs(prev => {
         const n = new Set(prev);
-        // Agar response me exact boolean aayi hai toh wo use karein, warna flip karein
         const newStatus = res.data.isPaused !== undefined ? res.data.isPaused : !n.has(id);
         newStatus ? n.add(id) : n.delete(id);
         return n;
       });
 
-      // Update the main jobs array as well to keep data in sync
       setJobs(prevJobs => prevJobs.map(job => 
         (job._id === id || job.id === id) ? { ...job, isPaused: !job.isPaused } : job
       ));
@@ -114,7 +110,6 @@ const DashboardLayout = () => {
       setSuccessMsg("Job removed successfully ✅");
       setTimeout(() => setSuccessMsg(""), 3000);
 
-      // Remove from UI instantly
       setJobs(jobs.filter(j => (j._id || j.id) !== id));
     } catch (error) {
       console.error("Error deleting job:", error);
@@ -139,6 +134,31 @@ const DashboardLayout = () => {
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <main className="main-content">
+        
+        {/* 👈 NAYA 3: TOP HEADER FOR UPDATE PROFILE BUTTON */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingBottom: '20px', marginBottom: '20px', borderBottom: '1px solid #eaeaea' }}>
+          <button 
+            onClick={() => navigate("/company/create-profile")} 
+            style={{ 
+              background: '#f3f0ff', 
+              color: '#553f9a', 
+              padding: '10px 18px', 
+              borderRadius: '10px', 
+              border: '1px solid #ede8fb', 
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.3s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#e9e3ff'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#f3f0ff'}
+          >
+            ✏️ Update Profile
+          </button>
+        </div>
+
         {activeTab === "dashboard" && (
           <DashboardTab
             jobs={jobs}
@@ -156,12 +176,12 @@ const DashboardLayout = () => {
 
         {activeTab === "hired" && (
           <HiredTab
-            jobs={jobs} // Passing the global jobs list
+            jobs={jobs}
             pausedJobs={pausedJobs}
             successMsg={successMsg}
             onShowModal={() => setShowModal(true)}
-            onRemoveJob={handleRemoveJob} // Passing the global delete function
-            onTogglePause={togglePause} // Passing the global toggle function
+            onRemoveJob={handleRemoveJob}
+            onTogglePause={togglePause}
             onOpenHistory={openHistory}
           />
         )}
@@ -175,7 +195,6 @@ const DashboardLayout = () => {
             talentSearch={talentSearch}
             setTalentSearch={setTalentSearch}
             talentSkill={talentSkill}
-            setTalentSkill={setTalentSkill}
             talentMin={talentMin}
             setTalentMin={setTalentMin}
             onStudentClick={setPortfolioStudent}
@@ -185,20 +204,18 @@ const DashboardLayout = () => {
 
       {/* ================= MODALS ================= */}
 
-      {/* 🟢 Hire Modal */}
       {showModal && (
         <HireModal
           onClose={() => setShowModal(false)}
           onSuccess={() => {
-            fetchJobs(); // Nayi job post hone ke baad Global State ko refresh karo
+            fetchJobs();
             setSuccessMsg("Job successfully posted! 🎉");
             setTimeout(() => setSuccessMsg(""), 4000);
-            setActiveTab("hired"); // Automatically switch to jobs tab
+            setActiveTab("hired"); 
           }}
         />
       )}
 
-      {/* History Modal */}
       {historyJob && !selectedApp && (
         <HistoryModal
           historyJob={historyJob}
@@ -209,7 +226,6 @@ const DashboardLayout = () => {
         />
       )}
 
-      {/* Student Detail Modal */}
       {selectedApp && (
         <StudentDetailModal
           applicant={selectedApp}
@@ -218,7 +234,6 @@ const DashboardLayout = () => {
         />
       )}
 
-      {/* Portfolio Modal */}
       {portfolioStudent && (
         <PortfolioModal
           student={portfolioStudent}
