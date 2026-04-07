@@ -14,10 +14,11 @@ const express = require("express");
 
   const PORT = process.env.PORT || 5000;
 
- app.use(cors({
+ // Backend - server.js
+app.use(cors({
   origin: [
-    "http://localhost:5173", // Aapka local frontend
-    "https://aapka-vercel-link.vercel.app" // Yahan apna asli Vercel wala link daal dena
+    "http://localhost:5173", 
+    "https://skilledlink-psi.vercel.app" // 👈 YAHAN APNA ASLI VERCEL LINK DAALIYE (Bina last wale slash '/' ke)
   ], 
   credentials: true
 }));
