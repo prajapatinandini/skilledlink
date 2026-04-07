@@ -1,0 +1,14 @@
+# Node modules
+node_modules/
+
+# Env files
+.env
+
+# Logs
+*.log
+
+# Other sensitive files
+.DS_Store
+
+# Uploads
+uploads/
