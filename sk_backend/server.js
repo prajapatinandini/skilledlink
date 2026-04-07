@@ -15,7 +15,10 @@ const express = require("express");
   const PORT = process.env.PORT || 5000;
 
  app.use(cors({
-  origin: "*", // Abhi ke liye sab allow kar do, baad mein isko secure karenge
+  origin: [
+    "http://localhost:5173", // Aapka local frontend
+    "https://aapka-vercel-link.vercel.app" // Yahan apna asli Vercel wala link daal dena
+  ], 
   credentials: true
 }));
   app.use(express.json());
