@@ -24,7 +24,7 @@ const express = require("express");
   app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
   // ✅ VERY IMPORTANT — frontend serve karega
-  app.use(express.static(path.join(__dirname, "frontend")));
+  //app.use(express.static(path.join(__dirname, "frontend")));
 
   // ✅ MongoDB
   mongoose.connect(process.env.MONGO_URI)
