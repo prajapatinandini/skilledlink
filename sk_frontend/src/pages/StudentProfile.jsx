@@ -42,7 +42,7 @@ const StudentProfile = () => {
       if (!token) return;
       try {
         const res = await axios.get(
-          "http://localhost:5000/api/student/me",
+          `${API_URL}/api/student/me`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -171,7 +171,7 @@ const StudentProfile = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/student/complete",
+        `${API_URL}/api/student/complete`,
         data,
         config
       );
