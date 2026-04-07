@@ -21,7 +21,7 @@ const ProfileView = ({ profile, onEdit }) => {
       <div style={{ background: '#fff', padding: '30px', borderRadius: '20px', border: '1.5px solid #ede8fb', display: 'flex', alignItems: 'center', gap: '25px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
         <div style={{ position: 'relative' }}>
           <img 
-            src={profile.profilePhoto ? (String(profile.profilePhoto).startsWith('http') ? profile.profilePhoto : `http://localhost:5000${profile.profilePhoto}`) : "/default.png"} 
+            src={profile.profilePhoto ? (String(profile.profilePhoto).startsWith('http') ? profile.profilePhoto : `${API_URL}${profile.profilePhoto}`) : "/default.png"} 
             alt="Profile" style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', border: '4px solid #f3f0ff' }}
             onError={(e) => { e.target.onerror = null; e.target.src = "https://ui-avatars.com/api/?name=Student&background=random"; }}
           />
