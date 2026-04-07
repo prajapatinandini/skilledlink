@@ -20,7 +20,7 @@ const ForgotPassword = () => {
   const userType = location.state?.role || 'student'; 
   const loginUrl = `/login/${userType}`;
 
-  const BASE_URL = `${API_URL}/api/auth`; 
+  
 
   // ==========================================
   // STEP 1: SEND OTP

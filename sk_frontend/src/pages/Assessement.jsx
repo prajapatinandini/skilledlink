@@ -174,7 +174,7 @@ const Assessment = () => {
         handler: async function (response) {
           try {
             setLoadingText("Verifying Payment... 🔄");
-            await axios.post(`${BASE_URL}/api/payment/verify`, {
+            await axios.post(`${API_URL}/api/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
@@ -244,7 +244,7 @@ const Assessment = () => {
       if (projectIds.length > 0) {
         setSubmittedProjectId(projectIds[0]);
         projectIds.forEach(id => {
-          axios.post(`${BASE_URL}/api/evaluation/evaluate`, { projectId: id }, getAuthHeader())
+          axios.post(`${API_URL}/api/evaluation/evaluate`, { projectId: id }, getAuthHeader())
             .then(res => console.log(`✅ AI Evaluation running for ${id}`))
             .catch(e => console.error(`⏳ AI Eval skipped for ${id}`));
         });
