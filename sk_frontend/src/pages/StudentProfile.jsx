@@ -24,7 +24,7 @@ const StudentProfile = () => {
   });
 
   const [resume, setResume] = useState(null);
-  const [existingResume, setExistingResume] = useState(null); // 🟢 NAYA STATE: Pehle se upload kiye hue resume ke liye
+  const [existingResume, setExistingResume] = useState(null); 
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -79,7 +79,6 @@ const StudentProfile = () => {
           achievements: parseArrayData(p.achievements)
         });
         
-        // 🚨 PHOTO PREVIEW FIX
         if (p.profilePhoto) {
           const fullPhotoUrl = p.profilePhoto.startsWith('http') 
             ? p.profilePhoto 
@@ -87,7 +86,6 @@ const StudentProfile = () => {
           setPhotoPreview(fullPhotoUrl);
         }
 
-        // 🚨 RESUME PREVIEW FIX (Pehle se upload hua resume show karne ke liye)
         if (p.resumeUrl) {
           setExistingResume(p.resumeUrl);
         }
@@ -148,7 +146,6 @@ const StudentProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Safety check ki button click ho raha hai ya nahi
     console.log("Saving Profile Data...");
     setLoading(true);
     setStatus({ type: "", msg: "" });
@@ -165,7 +162,6 @@ const StudentProfile = () => {
       }
     });
     
-    // Naya resume ya photo select kiya hai toh hi bhejenge, warna purana database me safe rahega
     if (resume) data.append("resume", resume);
     if (photo) data.append("profilePhoto", photo);
 
@@ -177,10 +173,15 @@ const StudentProfile = () => {
       );
       
       console.log("Profile Saved Successfully:", response.data);
-      setStatus({ type: "success", msg: "Profile saved successfully!" });
       
-      // 100% FORCED REDIRECT TO DASHBOARD
-      window.location.href = "/student"; 
+      // ✅ FIX: User ko feedback dikhane ke liye message aur delay set kiya
+      setStatus({ type: "success", msg: "Profile saved successfully! Redirecting..." });
+      
+      setTimeout(() => {
+        // ✅ FIX: "window.location.href" ki jagah React ka "navigate" use kiya
+        // ⚠️ DHYAAN DEIN: Agar aapka dashboard ka rasta '/dashboard' hai, toh ise badal lein
+        navigate("/student"); 
+      }, 1500);
       
     } catch (err) {
       console.error("API Error during save:", err);
@@ -352,24 +353,22 @@ const StudentProfile = () => {
           <div style={sectionHeaderStyle}><span>📄</span><h3 style={sectionTitleStyle}>Resume</h3></div>
           
           {resume ? (
-            // Agar User ne abhi NAYA resume select kiya hai
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f8f7ff', borderRadius: '10px' }}>
               <span style={{ fontSize: '20px' }}>📎</span>
               <span style={{ flex: 1, fontSize: '13px', fontWeight: '600' }}>{String(resume.name)}</span>
               <button type="button" onClick={() => setResume(null)} style={{ color: '#dc2626', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Remove</button>
             </div>
           ) : existingResume ? (
-            // Agar Database me pehle se Resume saved hai
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f0fdf4', borderRadius: '10px', border: '1px solid #bbf7d0' }}>
               <span style={{ fontSize: '20px' }}>✅</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '13px', fontWeight: '700', color: '#16a34a' }}>Resume Already Uploaded</div>
-                <a href={`http://localhost:5000${existingResume}`} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'underline' }}>View Resume</a>
+                {/* ✅ FIX: Hardcoded localhost ki jagah API_URL laga diya */}
+                <a href={`${API_URL}${existingResume}`} target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'underline' }}>View Resume</a>
               </div>
               <button type="button" onClick={() => fileRef.current.click()} style={{ color: '#553f9a', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', padding: '5px 10px', backgroundColor: '#e0e7ff', borderRadius: '5px' }}>Change Resume</button>
             </div>
           ) : (
-            // Agar koi resume nahi hai
             <div onClick={() => fileRef.current.click()} style={{ padding: '25px', textAlign: 'center', border: '1.5px dashed #7b5fc4', borderRadius: '12px', cursor: 'pointer', background: '#fafafa' }}>
               <span style={{ fontSize: '24px' }}>☁️</span>
               <div style={{ fontSize: '13px', fontWeight: '700', color: '#553f9a', marginTop: '5px' }}>Click to upload resume (PDF)</div>
