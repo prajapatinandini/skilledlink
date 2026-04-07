@@ -76,9 +76,9 @@ const express = require("express");
   });
 
   // ✅ Default page (optional)
-  app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "frontend", "login.html"));
-  });
+  // app.get("/", (req, res) => {
+  //   res.sendFile(path.join(__dirname, "frontend", "login.html"));
+  // });
 
   server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
