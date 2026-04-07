@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PaymentModal from "../components/modals/PaymentModal";
+
+// ✅ API_URL configuration
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const renderSafe = (val) => {
@@ -12,7 +14,7 @@ const renderSafe = (val) => {
   return String(val);
 };
 
-// 🟢 PROFILE VIEW COMPONENT (Unchanged)
+// 🟢 PROFILE VIEW COMPONENT
 const ProfileView = ({ profile, onEdit }) => {
   if (!profile) return <div style={{ padding: '20px', textAlign: 'center' }}>Profile details load ho rahi hain...</div>;
   
@@ -82,7 +84,6 @@ const ProfileView = ({ profile, onEdit }) => {
               <p style={{ color: '#999', fontSize: '14px', marginTop: '10px' }}>No achievements added yet.</p>
             )}
           </div>
-
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
@@ -130,27 +131,35 @@ const StudentPage = () => {
   const [isApplying, setIsApplying] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false); 
 
-  
-
   const fetchDashboardData = async () => {
     if (!token) { navigate("/login/student"); return; }
+    setLoading(true);
     try {
-      const profRes = await axios.get(`${API_URL}/student/me`, { headers: { Authorization: `Bearer ${token}` } });
-      if (!profRes.data) { navigate("/student/profile"); return; }
+      // ✅ FIX: Added "/api" prefix to all routes
+      const profRes = await axios.get(`${API_URL}/api/student/me`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       setProfile(profRes.data);
 
-      const jobRes = await axios.get(`${API_URL}/jobs/all`, { headers: { Authorization: `Bearer ${token}` } });
+      const jobRes = await axios.get(`${API_URL}/api/jobs/all`, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       setJobsData(Array.isArray(jobRes.data) ? jobRes.data : []);
 
       try {
-        const credRes = await axios.get(`${API_URL}/auth/user-credits`, { headers: { Authorization: `Bearer ${token}` } });
+        const credRes = await axios.get(`${API_URL}/api/auth/user-credits`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
         setCredits(credRes.data.credits || 0);
       } catch (e) {
         if(profRes.data?.user?.credits !== undefined) setCredits(profRes.data.user.credits);
       }
     } catch (err) {
       console.error("Dashboard Fetch Error:", err);
-      if (err.response && err.response.status === 404) { navigate("/student/profile"); }
+      // ✅ FIX: If profile not found, send to profile completion
+      if (err.response && err.response.status === 404) { 
+        navigate("/student/profile"); 
+      }
     } finally {
       setLoading(false);
     }
@@ -167,7 +176,10 @@ const StudentPage = () => {
   const handleApply = async (jobId) => {
     try {
       setIsApplying(true);
-      const res = await axios.post(`${API_URL}/assessment/start/${jobId}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      // ✅ FIX: Added "/api" prefix
+      const res = await axios.post(`${API_URL}/api/assessment/start/${jobId}`, {}, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
       if (res.data && res.data.attemptId) { navigate(`/assessment/${res.data.attemptId}`); } 
       else { alert("Failed to generate assessment attempt."); }
     } catch (error) {
@@ -209,7 +221,6 @@ const StudentPage = () => {
           
           {activeTab === 'jobs' && (
             <>
-              {/* 🟢 VIEW 1: COMPANY LIST */}
               {viewLevel === "COMPANY_LIST" && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '25px' }}>
                   {uniqueCompanies.length > 0 ? uniqueCompanies.map((comp) => (
@@ -217,14 +228,11 @@ const StudentPage = () => {
                       <div style={{ fontSize: '45px', marginBottom: '15px' }}>🏢</div>
                       <h3 style={{ color: '#2d1f6e', margin: '0 0 5px 0' }}>{comp.companyName || comp.name}</h3>
                       <p style={{ color: '#553f9a', fontWeight: 'bold', fontSize: '14px' }}>{comp.industry || "Technology"}</p>
-                      
-                      {/* ✅ NEW: Short Company Description */}
                       {comp.description && (
                         <p style={{ color: '#666', fontSize: '13px', marginTop: '10px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {comp.description}
                         </p>
                       )}
-
                       <p style={{ color: '#999', fontSize: '13px', marginTop: '10px' }}>📍 {comp.location || "Multiple Locations"}</p>
                       <button style={viewBtnStyle}>View Openings</button>
                     </div>
@@ -232,12 +240,9 @@ const StudentPage = () => {
                 </div>
               )}
 
-              {/* 🟢 VIEW 2: JOB LIST FOR A SPECIFIC COMPANY */}
               {viewLevel === "JOB_LIST" && (
                 <div>
                   <button onClick={() => setViewLevel("COMPANY_LIST")} style={backLinkStyle}>← Back to All Companies</button>
-                  
-                  {/* ✅ NEW: Company Details Header Box */}
                   <div style={{ background: '#fff', padding: '25px', borderRadius: '15px', border: '1px solid #ede8fb', marginBottom: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
@@ -246,16 +251,12 @@ const StudentPage = () => {
                           {selectedCompany?.industry} • {selectedCompany?.location}
                         </p>
                       </div>
-                      
-                      {/* ✅ NEW: Website Button */}
                       {selectedCompany?.website && (
                         <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer" style={{ background: '#f3f0ff', color: '#553f9a', padding: '10px 16px', borderRadius: '10px', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                           🌐 Visit Website ↗
                         </a>
                       )}
                     </div>
-                    
-                    {/* ✅ NEW: Full Description */}
                     {selectedCompany?.description && (
                       <p style={{ color: '#444', lineHeight: '1.6', fontSize: '15px', marginTop: '15px', whiteSpace: 'pre-line' }}>
                         {selectedCompany.description}
@@ -276,7 +277,6 @@ const StudentPage = () => {
                 </div>
               )}
 
-              {/* 🟢 VIEW 3: JOB DETAILS */}
               {viewLevel === "JOB_DETAILS" && (
                 <div style={cardStyle}>
                   <button onClick={() => setViewLevel("JOB_LIST")} style={backLinkStyle}>← Back to All Roles</button>
@@ -311,6 +311,7 @@ const StudentPage = () => {
   );
 };
 
+// Styles (same as before)
 const sidebarStyle = { width: '280px', background: '#553f9a', padding: '40px 20px', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.05)' };
 const sideBtnStyle = { padding: '16px 20px', textAlign: 'left', border: 'none', color: '#fff', borderRadius: '14px', cursor: 'pointer', fontWeight: '600', transition: '0.2s' };
 const cardStyle = { background: '#fff', padding: '30px', borderRadius: '24px', border: '1.5px solid #ede8fb', boxShadow: '0 8px 24px rgba(85,63,154,0.04)', cursor: 'pointer', transition: '0.3s' };
