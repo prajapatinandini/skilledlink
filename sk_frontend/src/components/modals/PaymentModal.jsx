@@ -3,7 +3,8 @@ import axios from "axios";
 
 const PaymentModal = ({ isOpen, onClose, onSuccess }) => {
   // ✅ FIX 1: Using .env for API URL (Fallback to localhost for safety)
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  
+const API_URL = "https://skilledlink-f4lp.onrender.com";
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;

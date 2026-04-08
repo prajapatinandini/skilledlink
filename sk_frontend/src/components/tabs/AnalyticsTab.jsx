@@ -8,7 +8,8 @@ const AnalyticsTab = () => {
   const P = "#553f9a";
   const PL = "#8573cc";
 
- const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+ 
+const API_URL = "https://skilledlink-f4lp.onrender.com";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================

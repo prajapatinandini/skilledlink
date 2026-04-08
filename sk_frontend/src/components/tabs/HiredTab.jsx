@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 
 // 🟢 Preview environment ke liye DurationBadge yahan define kiya gaya hai
 const DurationBadge = ({ daysLeft }) => (

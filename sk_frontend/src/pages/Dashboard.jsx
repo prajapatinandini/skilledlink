@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 
 const QUIZ_QS = [
   { q: "What does HTML stand for?", options: ["HyperText Markup Language","HighText Machine Language","HyperText Machine Language","Hyper Transfer Markup Language"], correct: 0 },

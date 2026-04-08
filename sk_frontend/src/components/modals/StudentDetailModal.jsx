@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 
 const StudentDetailModal = ({ applicant, onBack, onClose }) => {
   const [view, setView] = useState(null);

@@ -6,7 +6,8 @@ const PortfolioModal = ({ student, onClose }) => {
   const [portfolioData, setPortfolioData] = useState(null);
   const [loading, setLoading] = useState(true);
 
- const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+ 
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 
   // API Integration: Modal open hote hi student ki detail mangwana
   useEffect(() => {

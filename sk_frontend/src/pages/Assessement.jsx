@@ -7,7 +7,8 @@ const Assessment = () => {
   const navigate = useNavigate();
   const { testId: attemptIdFromUrl } = useParams();
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 
   const getAuthHeader = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
