@@ -35,7 +35,6 @@ const Login = () => {
     setTimeout(() => navigate("/register/company"), 500);
   };
 
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -45,6 +44,11 @@ const Login = () => {
         {
           email,
           password,
+        },
+        // 👇 YEH RAHI HAMARI JAADOO KI PUDIYA (CORS FIX) 👇
+        {
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" }
         }
       );
 

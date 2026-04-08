@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/studentLogin.css";
-const API_URL = "https://skilledlink-f4lp.onrender.com" || "http://localhost:5000";
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,14 +40,17 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        `${API_URL}/api/auth/login`,
-        {
-          email,
-          password,
-          role: "student",
-        }
-      );
-
+  `${API_URL}/api/auth/login`,
+  {
+    email,
+    password,
+    role: "student", // Sirf Student wali file mein ye line rakhni hai
+  },
+  { 
+    withCredentials: true,
+    headers: { "Content-Type": "application/json" }
+  }
+);
       alert(res.data.message);
 
       localStorage.setItem("token", res.data.token);
