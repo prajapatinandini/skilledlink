@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios'; 
 import ScoreBar from '../common/ScoreBar';
 import { STATUS_CLS } from '../../data/constants';
-import ProfileAvatar from './ProfileAvatar';
+
 const API_URL = "https://skilledlink-f4lp.onrender.com";
 
 const HistoryModal = ({
@@ -149,16 +149,7 @@ const HistoryModal = ({
                 className="history-row history-row-clickable"
                 onClick={() => onSelectApplicant(a)} 
               >
-                <ProfileAvatar 
-                              src={student.img} 
-                              name={student.name} 
-                              size="90px" 
-                              customStyle={{
-                                border: "3px solid rgba(255,255,255,0.5)",
-                                flexShrink: 0,
-                                boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
-                              }} 
-                            />
+                <img src={a.img} alt={a.name} className="history-avatar" />
                 <div className="history-info" style={{ flex: 1 }}>
                   
                   {/* 🟢 DROPDOWN YAHAN ADD KIYA HAI */}
