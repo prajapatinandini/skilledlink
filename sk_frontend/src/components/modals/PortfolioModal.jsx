@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import ProfileAvatar from './ProfileAvatar';
 
 const PortfolioModal = ({ student, onClose }) => {
   // States for fetching real student data
@@ -143,18 +144,15 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
           </button>
 
           <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
-            <img
-              src={student.img || "/default.png"} 
-              alt={student.name}
-              style={{
-                width: "90px",
-                height: "90px",
-                borderRadius: "50%",
-                objectFit: "cover",
+            <ProfileAvatar 
+              src={student.img} 
+              name={student.name} 
+              size="90px" 
+              customStyle={{
                 border: "3px solid rgba(255,255,255,0.5)",
                 flexShrink: 0,
                 boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
-              }}
+              }} 
             />
             <div style={{ flex: 1 }}>
               <div style={{

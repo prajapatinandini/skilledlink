@@ -201,7 +201,7 @@ exports.deleteJob = async (req, res) => {
 
 
 // 7️⃣ GET APPLICANTS (History Modal ke liye)
-// ==========================================
+
 exports.getApplicants = async (req, res) => {
   try {
     if(!Application) return res.json([]); // Guard clause
