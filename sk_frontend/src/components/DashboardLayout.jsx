@@ -51,7 +51,7 @@ const DashboardLayout = () => {
   // ==========================================
   const fetchJobs = async () => {
     try {
-      const res = await axios.get(`${API_URL}/jobs`, {
+      const res = await axios.get(`${API_URL}/api/jobs`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       
@@ -77,7 +77,7 @@ const DashboardLayout = () => {
   // ==========================================
   const togglePause = async (id) => {
     try {
-      const res = await axios.patch(`${API_URL}/jobs/${id}/toggle`, {}, {
+      const res = await axios.patch(`${API_URL}/api/jobs/${id}/toggle`, {}, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
 
@@ -105,7 +105,7 @@ const DashboardLayout = () => {
     if (!window.confirm("Are you sure you want to remove this position?")) return;
 
     try {
-      await axios.delete(`${API_URL}/jobs/${id}`, {
+      await axios.delete(`${API_URL}/api/jobs/${id}`, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       

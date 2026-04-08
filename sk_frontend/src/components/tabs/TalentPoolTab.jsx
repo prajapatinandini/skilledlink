@@ -27,7 +27,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
       try {
         setLoading(true);
         // 🛠️ Updated API Route: Matching the dashboard pattern
-        const res = await axios.get(`${API_URL}/dashboard/talent-pool`, {
+        const res = await axios.get(`${API_URL}/api/dashboard/talent-pool`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         

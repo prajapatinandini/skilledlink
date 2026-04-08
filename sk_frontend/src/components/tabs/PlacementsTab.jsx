@@ -19,7 +19,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
         const token = getToken();
         
         // 1. Get all placements
-        const res = await axios.get(`${API_URL}/dashboard/placements`, {
+        const res = await axios.get(`${API_URL}/api/dashboard/placements`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -33,7 +33,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
             
             if (studentId) {
               try {
-                const portRes = await axios.get(`${API_URL}/dashboard/portfolio/${studentId}`, {
+                const portRes = await axios.get(`${API_URL}/api/dashboard/portfolio/${studentId}`, {
                   headers: { Authorization: `Bearer ${token}` }
                 });
                 profileData = portRes.data;

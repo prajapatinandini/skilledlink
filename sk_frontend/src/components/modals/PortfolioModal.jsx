@@ -20,7 +20,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
         const studentId = student.id || student._id;
         
         // 🟢 NAYA URL: Ab backend ke dashboardRoutes.js se match karega
-        const res = await axios.get(`${API_URL}/dashboard/portfolio/${studentId}`, {
+        const res = await axios.get(`${API_URL}/api/dashboard/portfolio/${studentId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

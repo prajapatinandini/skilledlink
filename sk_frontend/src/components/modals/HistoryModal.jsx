@@ -29,7 +29,7 @@ const HistoryModal = ({
 
         const jobId = historyJob._id || historyJob.id;
         
-        const res = await axios.get(`${API_URL}/dashboard/attempts/${jobId}`, {
+        const res = await axios.get(`${API_URL}/api/dashboard/attempts/${jobId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -80,7 +80,7 @@ const HistoryModal = ({
       
       // Backend api hit karega jahan email bhejte hain
       const res = await axios.patch(
-        `${API_URL}/application/${attemptId}/status`, // 👈 Backend route
+        `${API_URL}/api/application/${attemptId}/status`, // 👈 Backend route
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -142,7 +142,7 @@ const HireModal = ({ onClose, onSuccess }) => {
       };
 
       // Ensure that this endpoint matches your backend job creation route
-      const response = await axios.post(`${API_URL}/jobs/create`, payload, {
+      const response = await axios.post(`${API_URL}/api/jobs/create`, payload, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
           "Content-Type": "application/json"

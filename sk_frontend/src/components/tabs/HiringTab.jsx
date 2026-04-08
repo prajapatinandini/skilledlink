@@ -20,16 +20,19 @@ const HiringTab = ({ onOpenHistory }) => {
   // ==========================================
   // 🟢 REAL API CALL (Fetch Jobs from DB)
   // ==========================================
+  // ... (baaki code same rahega)
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        // Assuming your route is GET /api/jobs
-        const res = await axios.get(`${API_URL}/jobs`, {
+        
+        // ❌ Pehle: `${API_URL}/jobs`
+        // ✅ Ab: Isme "/api" prefix aur "/all" (agar backend route aisa hai) lagaiye
+        const res = await axios.get(`${API_URL}/api/jobs/all`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         
-        // 🛠️ Fallback added: If backend sends { jobs: [] } or just []
         setJobs(res.data.jobs || res.data || []);
       } catch (err) {
         console.error("Error fetching jobs:", err);
@@ -40,6 +43,8 @@ const HiringTab = ({ onOpenHistory }) => {
 
     fetchJobs();
   }, []);
+
+// ... (baaki code same rahega)
 
   // Sorting: Paused jobs ko neeche bhejna
   const sortedJobs = [...jobs].sort((a, b) =>

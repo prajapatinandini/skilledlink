@@ -61,7 +61,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
         const token = getToken();
 
         // 1. Fetch Projects & Evaluation (Yahan 'Attempt ID' lagta hai jo ki applicant.id hai)
-        const projRes = await axios.get(`${API_URL}/dashboard/projects/${applicant.id}`, {
+        const projRes = await axios.get(`${API_URL}/api/dashboard/projects/${applicant.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProjects(projRes.data.projects || []);
@@ -71,7 +71,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
         const studentId = applicant.rawAttemptData?.student?._id || applicant.rawAttemptData?.student;
 
         if (studentId) {
-          const portRes = await axios.get(`${API_URL}/dashboard/portfolio/${studentId}`, {
+          const portRes = await axios.get(`${API_URL}/api/dashboard/portfolio/${studentId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setProfileData(portRes.data);
@@ -96,7 +96,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
     try {
       setLoadingAction(true);
       // 🔥 Yahan '/dashboard/attempt' ki jagah '/application' aayega 🔥
-      await axios.patch(`${API_URL}/application/${applicant.id}/status`, { status: newStatus }, {
+      await axios.patch(`${API_URL}/api/application/${applicant.id}/status`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
       alert(`Student successfully marked as ${newStatus} and email sent! 📧🎉`);

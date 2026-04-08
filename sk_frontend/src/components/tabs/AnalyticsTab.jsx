@@ -20,7 +20,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
       try {
         setLoading(true);
         // 🛠️ Updated to match dashboard routes. Assuming '/dashboard/analytics'
-        const res = await axios.get(`${API_URL}/dashboard/analytics`, {
+        const res = await axios.get(`${API_URL}/api/dashboard/analytics`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
 
