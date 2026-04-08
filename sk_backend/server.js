@@ -13,16 +13,23 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
 
-// 🚀 ================= BULLETPROOF CORS SETUP ================= 🚀
-app.use(cors({
-  origin: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Har tarah ki request allow kar di
-  allowedHeaders: ["Content-Type", "Authorization"], // Authorization (Token) allow kar diya
+// 🚀 ================= GOD MODE CORS SETUP ================= 🚀
+const corsOptions = {
+  origin: true, // Har origin ko allow karega (No blockages)
   credentials: true,
-  optionsSuccessStatus: 200 // Kuch browsers ke liye extra safety
-}));
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"]
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // 👈 YEH SABSE ZAROORI HAI (Preflight Bypass)
 
 app.use(express.json());
+
+// ✅ TEST ROUTE (Yeh check karne ke liye ki server zinda hai ya crash)
+app.get("/", (req, res) => {
+  res.send("🚀 Backend is Running Perfectly!");
+});
 
 // ✅ uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
