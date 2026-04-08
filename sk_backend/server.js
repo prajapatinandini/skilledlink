@@ -2,7 +2,6 @@ require("dotenv").config();
 const express = require("express");
 const http = require("http");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const path = require("path");
 const cron = require("node-cron");
 
@@ -13,22 +12,27 @@ const server = http.createServer(app);
 
 const PORT = process.env.PORT || 5000;
 
-// 🚀 ================= GOD MODE CORS SETUP ================= 🚀
-const corsOptions = {
-  origin: true, // Har origin ko allow karega (No blockages)
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"]
-};
+// 🚀 ================= 100% CRASH-PROOF CUSTOM CORS ================= 🚀
+app.use((req, res, next) => {
+  // Jo bhi frontend request bhejega, backend usko automatically allow kar dega
+  const origin = req.headers.origin || "*";
+  res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Accept, Origin, X-Requested-With");
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // 👈 YEH SABSE ZAROORI HAI (Preflight Bypass)
+  // Agar browser preflight (OPTIONS) check karta hai, toh usko turant Success bhej do (Bina route crash kiye)
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+  next();
+});
 
 app.use(express.json());
 
-// ✅ TEST ROUTE (Yeh check karne ke liye ki server zinda hai ya crash)
+// ✅ TEST ROUTE (Yeh zinda hai check karne ke liye)
 app.get("/", (req, res) => {
-  res.send("🚀 Backend is Running Perfectly!");
+  res.send("🚀 Backend is Running Perfectly with Custom CORS!");
 });
 
 // ✅ uploads folder
@@ -55,12 +59,10 @@ app.use("/api/assessment", require("./routes/assessmentRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes")); 
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
-// 🚀 ================= CRON JOB (AUTO-PAUSE EXPIRED JOBS) ================= 🚀
+// 🚀 ================= CRON JOB ================= 🚀
 cron.schedule('0 0 * * *', async () => {
   try {
     const today = new Date();
-    
-    // Wo saari jobs dhundho jinki expiry date nikal chuki hai, par wo abhi tak expire mark nahi hui
     const expiredJobs = await Job.find({
       expiresAt: { $lt: today }, 
       isExpired: false 
@@ -68,10 +70,9 @@ cron.schedule('0 0 * * *', async () => {
 
     if (expiredJobs.length > 0) {
       console.log(`⏳ Auto-Pausing ${expiredJobs.length} expired jobs...`);
-      
       for (let job of expiredJobs) {
         job.isPaused = true;
-        job.isExpired = true; // UI pe status dikhane ke kaam aayega
+        job.isExpired = true; 
         await job.save();
       }
       console.log('✅ Auto-Pause complete!');
