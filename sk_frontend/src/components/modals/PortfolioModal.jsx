@@ -143,19 +143,29 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
           </button>
 
           <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
-            <img
-              src={student.img || "/default.png"} 
-              alt={student.name}
-              style={{
-                width: "90px",
-                height: "90px",
-                borderRadius: "50%",
-                objectFit: "cover",
-                border: "3px solid rgba(255,255,255,0.5)",
-                flexShrink: 0,
-                boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
-              }}
-            />
+           <img
+            src={
+              student.img 
+                ? (String(student.img).startsWith('http') ? student.img : `${API_URL}${student.img}`) 
+                : "/default.png"
+            }
+            alt={student.name}
+            style={{
+              width: "90px",
+              height: "90px",
+              borderRadius: "50%",
+              objectFit: "cover",
+              border: "3px solid rgba(255,255,255,0.5)",
+              flexShrink: 0,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
+            }}
+            // 👇 Yahan fallback add kar diya gaya hai
+            onError={(e) => { 
+              e.target.onerror = null; 
+              const fallbackName = student.name ? encodeURIComponent(student.name) : "Student";
+              e.target.src = `https://ui-avatars.com/api/?name=${fallbackName}&background=random&color=fff`; 
+            }}
+          />
             <div style={{ flex: 1 }}>
               <div style={{
                 display: "flex",
