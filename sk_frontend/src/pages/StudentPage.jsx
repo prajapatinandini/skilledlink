@@ -4,7 +4,7 @@ import axios from "axios";
 import PaymentModal from "../components/modals/PaymentModal";
 
 // ✅ API_URL configuration
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = "https://skilledlink-f4lp.onrender.com";
 
 const renderSafe = (val) => {
   if (val === undefined || val === null) return "N/A";
