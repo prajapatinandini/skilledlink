@@ -32,7 +32,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     try {
-      const res = await axios.post(`${API_URL}/forgot-password`, { email });
+      const res = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
       setMessage(res.data.message || "OTP sent to your email!");
       setStep(2); 
     } catch (err) {
@@ -51,7 +51,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     try {
-      const res = await axios.post(`${API_URL}/verify-reset-otp`, { email, otp });
+      const res = await axios.post(`${API_URL}/api/auth/verify-reset-otp`, { email, otp });
       setMessage(res.data.message || "OTP verified! Please set a new password.");
       setStep(3); 
     } catch (err) {
@@ -70,7 +70,7 @@ const ForgotPassword = () => {
     setError('');
     setMessage('');
     try {
-      const res = await axios.post(`${API_URL}/reset-password`, { email, newPassword });
+      const res = await axios.post(`${API_URL}/api/auth/reset-password`, { email, newPassword });
       alert(res.data.message || `Password reset successful! Redirecting to ${userType} login...`);
       
       // 🚀 YAHAN DYNAMIC REDIRECT HOGA (Student hai toh /login/student, Company hai toh /login/company)
