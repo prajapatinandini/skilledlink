@@ -79,8 +79,8 @@ const Register = () => {
       {/* LEFT SIDE */}
       <div className="register-left">
         <form className="register-box" onSubmit={handleSubmit}>
-          <h2>SkilledLink Register</h2>
-          <p>Create your SkilledLink account</p>
+          <h2>SkillLink Register</h2>
+          <p>Create your SkillLink account</p>
 
           <input
             type="text"
@@ -134,7 +134,7 @@ const Register = () => {
             alt="Register Illustration"
             className="register-illustration"
           />
-          <h1 className="brand-name">SkilledLink</h1>
+          <h1 className="brand-name">SkillLink</h1>
         </div>
       </div>
 
