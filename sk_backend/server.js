@@ -15,10 +15,7 @@ const PORT = process.env.PORT || 5000;
 
 // 🚀 ================= BULLETPROOF CORS SETUP ================= 🚀
 app.use(cors({
-  origin: [
-    "http://localhost:5173", 
-    "https://skilledlink-psi.vercel.app" 
-  ], 
+  origin: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], // Har tarah ki request allow kar di
   allowedHeaders: ["Content-Type", "Authorization"], // Authorization (Token) allow kar diya
   credentials: true,
