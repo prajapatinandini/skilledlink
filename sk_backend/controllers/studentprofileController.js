@@ -20,25 +20,25 @@ exports.completeProfile = async (req, res) => {
       ? skills
       : typeof skills === 'string' ? skills.split(",").map(s => s.trim()).filter(Boolean) : [];
 
-    // 3. Process Tech Stack safely (No strict 'allowedTech' restrictions anymore)
+    // 3. Process Tech Stack safely
     const techStackArray = Array.isArray(techStack)
       ? techStack
       : typeof techStack === 'string' ? techStack.split(",").map(t => t.trim()).filter(Boolean) : [];
 
-    // 4. Handle multiple file uploads
+    // 4. Handle multiple file uploads (🚀 CLOUDINARY FIX YAHAN HAI 🚀)
     let resumeUrl;
     let profilePhotoUrl;
     
     if (req.files) {
       if (req.files['resume'] && req.files['resume'][0]) {
-        resumeUrl = `/uploads/${req.files['resume'][0].filename}`;
+        resumeUrl = req.files['resume'][0].path; // Cloudinary URL
       }
       if (req.files['profilePhoto'] && req.files['profilePhoto'][0]) {
-        profilePhotoUrl = `/uploads/${req.files['profilePhoto'][0].filename}`;
+        profilePhotoUrl = req.files['profilePhoto'][0].path; // Cloudinary URL
       }
     } else if (req.file) {
-      if (req.file.fieldname === 'resume') resumeUrl = `/uploads/${req.file.filename}`;
-      if (req.file.fieldname === 'profilePhoto') profilePhotoUrl = `/uploads/${req.file.filename}`;
+      if (req.file.fieldname === 'resume') resumeUrl = req.file.path;
+      if (req.file.fieldname === 'profilePhoto') profilePhotoUrl = req.file.path;
     }
 
     // 5. Build Profile Data
@@ -57,7 +57,7 @@ exports.completeProfile = async (req, res) => {
       profileCompleted: true
     };
 
-    // 🔥 FIX: Safely handle batchYear to prevent CastError
+    // Safely handle batchYear to prevent CastError
     if (batchYear && String(batchYear).trim() !== "") {
       profileData.batchYear = Number(batchYear);
     }
@@ -117,7 +117,6 @@ exports.updateProfile = async (req, res) => {
 
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        // 🔥 FIX: Safely handle empty batchYear in update
         if (field === "batchYear") {
           if (String(req.body[field]).trim() !== "") {
             updates[field] = Number(req.body[field]);
@@ -142,16 +141,17 @@ exports.updateProfile = async (req, res) => {
         : typeof updates.techStack === 'string' ? updates.techStack.split(",").map(t => t.trim()).filter(Boolean) : [];
     }
 
+    // 🚀 CLOUDINARY FIX YAHAN BHI HAI 🚀
     if (req.files) {
       if (req.files['resume'] && req.files['resume'][0]) {
-        updates.resumeUrl = `/uploads/${req.files['resume'][0].filename}`;
+        updates.resumeUrl = req.files['resume'][0].path; // Cloudinary URL
       }
       if (req.files['profilePhoto'] && req.files['profilePhoto'][0]) {
-        updates.profilePhoto = `/uploads/${req.files['profilePhoto'][0].filename}`;
+        updates.profilePhoto = req.files['profilePhoto'][0].path; // Cloudinary URL
       }
     } else if (req.file) {
-      if (req.file.fieldname === 'resume') updates.resumeUrl = `/uploads/${req.file.filename}`;
-      if (req.file.fieldname === 'profilePhoto') updates.profilePhoto = `/uploads/${req.file.filename}`;
+      if (req.file.fieldname === 'resume') updates.resumeUrl = req.file.path;
+      if (req.file.fieldname === 'profilePhoto') updates.profilePhoto = req.file.path;
     }
 
     const profile = await StudentProfile.findOneAndUpdate(

@@ -50,7 +50,7 @@ exports.getTalentPoolData = async (req, res) => {
     const jobs = await Job.find({ company: companyId }).select('_id');
     const jobIds = jobs.map(job => job._id);
 
-    const attempts = await TestAttempt.find({ company: { $in: jobIds } }).populate('student', 'name email');
+    const attempts = await TestAttempt.find({ company: { $in: jobIds } }).populate('student', 'name email profilePhoto');
 
     const talentMap = {};
     attempts.forEach(attempt => {
@@ -89,14 +89,31 @@ exports.getTalentPoolData = async (req, res) => {
   }
 };
 
-// 5. APPLICANT HISTORY
+// 5. APPLICANT HISTORY (🚀 FIX: Added ProfilePhoto & Resume logic)
 exports.getJobAttempts = async (req, res) => {
   try {
     const { jobId } = req.params;
+    
+    // lean() zaruri hai taaki hum object modify kar sakein
     const attempts = await TestAttempt.find({ company: jobId }) 
-      .populate("student", "name email");
+      .populate("student", "name email profilePhoto resumeUrl")
+      .lean(); 
       
-    res.status(200).json({ attempts });
+    // 🚀 SMART FETCH: Agar photo User schema mein nahi hai, toh StudentProfile mein dhoondho
+    const attemptsWithProfiles = await Promise.all(
+      attempts.map(async (attempt) => {
+        if (attempt.student && attempt.student._id) {
+          const profile = await StudentProfile.findOne({ user: attempt.student._id }).lean();
+          if (profile) {
+            attempt.student.profilePhoto = attempt.student.profilePhoto || profile.profilePhoto;
+            attempt.student.resumeUrl = attempt.student.resumeUrl || profile.resumeUrl;
+          }
+        }
+        return attempt;
+      })
+    );
+      
+    res.status(200).json({ attempts: attemptsWithProfiles });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -170,7 +187,7 @@ exports.finalizeAssessment = async (req, res) => {
   }
 };
 
-// 1. DASHBOARD TAB
+// 1. DASHBOARD TAB (🚀 FIX: Added Job Title Population)
 exports.getDashboardData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
@@ -184,12 +201,16 @@ exports.getDashboardData = async (req, res) => {
     const allAttempts = await TestAttempt.find({ 
       company: { $in: jobIds }, 
       status: { $in: ["completed", "In Review", "Hired", "Rejected"] } 
-    }).populate("student", "name email");
+    })
+    .populate("student", "name email profilePhoto") // ProfilePhoto yahan add kar diya
+    .populate("company", "title"); // 🚀 Yahan humne job ka naam nikaal liya
 
     const topStudents = allAttempts.map(a => ({
       id: a.student?._id,
       name: a.student?.name,
-      percentage: Math.round(a.finalScore || 0)
+      jobTitle: a.company?.title || "N/A", // 🚀 Ab job title frontend par jayega
+      percentage: Math.round(a.finalScore || 0),
+      img: a.student?.profilePhoto // Image bhi pass kar di
     })).sort((a, b) => b.percentage - a.percentage).slice(0, 3);
 
     res.status(200).json({ totalJobs, totalApplicants, hiredCandidates, topStudents });
@@ -198,12 +219,11 @@ exports.getDashboardData = async (req, res) => {
   }
 };
 
-// 8. GET PORTFOLIO DATA (Fixed: Added profilePhoto and resumeUrl)
+// 8. GET PORTFOLIO DATA 
 exports.getStudentPortfolio = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // User model mein bhi check kar lenge just in case
     let profile = await StudentProfile.findById(id).populate('user', 'name email profilePhoto resumeUrl');
     let user = profile ? profile.user : await User.findById(id).select('name email profilePhoto resumeUrl');
 
@@ -223,11 +243,8 @@ exports.getStudentPortfolio = async (req, res) => {
     res.status(200).json({
       name:         user.name,
       email:        user.email,
-      
-      // 🚀 YAHAN THI PROBLEM! Ab photo aur resume frontend ko jayenge 🚀
       profilePhoto: profile?.profilePhoto || user.profilePhoto || null,
       resumeUrl:    profile?.resumeUrl || user.resumeUrl || null,
-      
       degree:       profile?.branch    || "N/A",  
       college:      profile?.college   || "N/A",
       year:         profile?.batchYear?.toString() || "N/A",
