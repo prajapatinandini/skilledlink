@@ -15,8 +15,7 @@ const TalentPoolTab = ({
   const [allSkills, setAllSkills] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  
-const API_URL = "https://skilledlink-f4lp.onrender.com";
+  const API_URL = "https://skilledlink-f4lp.onrender.com";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -26,42 +25,38 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
     const fetchTalentPool = async () => {
       try {
         setLoading(true);
-        // 🛠️ Updated API Route: Matching the dashboard pattern
         const res = await axios.get(`${API_URL}/api/dashboard/talent-pool`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
         
-        // 🛠️ DATA MAPPING: Backend ke raw data ko frontend ke "enriched" format me map karna
+        // 🛠️ DATA MAPPING FIX: Ab hum 'branch' aur 'batchYear' ko map kar rahe hain
         const formattedData = (res.data || []).map(s => {
-          // Backend se student ki info nikalna (kabhi nested hoti hai, kabhi flat)
           const studentInfo = s.student || s;
 
           return {
             id: studentInfo._id || studentInfo.id || s._id,
             name: studentInfo.name || "Unknown Candidate",
-            img: studentInfo.img || "/default.png",
+            img: studentInfo.profilePhoto || studentInfo.img || null, // Naya Image variable liya
             port: {
               college: studentInfo.college || "N/A",
-              degree: studentInfo.degree || "N/A",
-              year: studentInfo.year || "N/A",
+              degree: studentInfo.branch || studentInfo.degree || "N/A", // Backend se branch aata hai
+              year: studentInfo.batchYear || studentInfo.year || "N/A", // Backend se batchYear aata hai
               skills: studentInfo.skills || s.skills || []
             },
-            // 🟢 Backend se naye 4 exact scores map kar rahe hain 
-            avgScore: s.avgScore || 0, // Fallback ke liye
+            avgScore: s.avgScore || 0, 
             quiz: s.quiz || 0,
             coding: s.coding || 0,
             project: s.project || 0,
-
             percentage: s.percentage || s.avgScore || 0, 
             apps: s.apps || s.totalApplications || 1,
             hired: s.hired || s.hiredCount || 0,
-            raw: s // Future reference ke liye pura raw data
+            raw: s 
           };
         });
 
         setEnriched(formattedData);
 
-        // Data aane ke baad usme se unique skills extract karna dropdown ke liye
+        // Data aane ke baad usme se unique skills extract karna
         const skillsSet = new Set(formattedData.flatMap(s => s.port?.skills || []));
         setAllSkills([...skillsSet].sort());
         
@@ -84,7 +79,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
       ));
     const matchSkill = !talentSkill || (s.port && s.port.skills.includes(talentSkill));
     
-    // Yahan bhi filter calculated value par set kiya
     const calculatedOverall = Math.round(((s.project || 0) + (s.quiz || 0) + (s.coding || 0)) / 3);
     const matchScore = calculatedOverall >= talentMin;
     
@@ -272,7 +266,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
             const statusBg = s.hired > 0 ? "#dcfce7" : s.apps > 0 ? "#fef9c3" : "#f1f5f9";
             const statusLabel = s.hired > 0 ? `✓ Hired (${s.hired}×)` : s.apps > 0 ? "In Pipeline" : "Not Applied";
 
-            // 🟢 NAYA LOGIC: Yahan teeno ko jod kar 3 se divide kar rahe hain
             const calculatedOverall = Math.round(((s.project || 0) + (s.quiz || 0) + (s.coding || 0)) / 3);
 
             return (
@@ -297,7 +290,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                   e.currentTarget.style.transform = "translateY(0)";
                   e.currentTarget.style.boxShadow = "0 5px 16px rgba(85,63,154,0.07)";
                 }}
-                // Jab card click ho toh PortfolioModal open karne ke liye 'onStudentClick' trigger hota hai
                 onClick={() => onStudentClick(s)}
               >
                 {/* decorative blob */}
@@ -329,8 +321,13 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                 {/* avatar + name */}
                 <div style={{ display: "flex", gap: "14px", alignItems: "center", marginBottom: "14px" }}>
                   <div style={{ position: "relative", flexShrink: 0 }}>
+                    {/* 🚀 SMART IMAGE FIX APPLIED HERE */}
                     <img
-                      src={s.img}
+                      src={
+                        s.img 
+                          ? (String(s.img).startsWith('http') ? s.img : `${API_URL}${s.img}`)
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=f3f0ff&color=553f9a&bold=true`
+                      }
                       alt={s.name}
                       style={{
                         width: "58px",
@@ -339,6 +336,10 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                         objectFit: "cover",
                         border: "3px solid #e0d9f5",
                         boxShadow: "0 4px 10px rgba(85,63,154,0.12)"
+                      }}
+                      onError={(e) => { 
+                        e.target.onerror = null; 
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=f3f0ff&color=553f9a&bold=true`; 
                       }}
                     />
                   </div>
@@ -357,7 +358,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                   </div>
                 </div>
 
-                {/* 🟢 4 NAYE SCORE BARS */}
+                {/* 4 SCORE BARS */}
                 <div style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
@@ -365,7 +366,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                   marginBottom: "14px"
                 }}>
                   {[
-                    ["🏆 Overall", calculatedOverall], // Yahan calculatedOverall laga diya
+                    ["🏆 Overall", calculatedOverall], 
                     ["📂 Project", s.project || 0],
                     ["📝 Quiz", s.quiz || 0],
                     ["💻 Coding", s.coding || 0]

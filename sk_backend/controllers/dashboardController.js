@@ -44,13 +44,26 @@ exports.getPlacementsData = async (req, res) => {
 };
 
 // 4. TALENT POOL TAB
+// 4. TALENT POOL TAB (🚀 FIX: Added Profile Data & Image Logic)
 exports.getTalentPoolData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
     const jobs = await Job.find({ company: companyId }).select('_id');
     const jobIds = jobs.map(job => job._id);
 
-    const attempts = await TestAttempt.find({ company: { $in: jobIds } }).populate('student', 'name email profilePhoto');
+    // Lean ka use kiya taaki easily modify kar sakein
+    const attempts = await TestAttempt.find({ company: { $in: jobIds } })
+      .populate('student', 'name email profilePhoto')
+      .lean();
+
+    // 🚀 SMART FETCH: Ek hi baar mein saare students ki profile fetch kar li
+    const studentIds = [...new Set(attempts.map(a => a.student?._id?.toString()).filter(Boolean))];
+    const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
+    
+    const profileMap = {};
+    profiles.forEach(p => {
+      profileMap[p.user.toString()] = p;
+    });
 
     const talentMap = {};
     attempts.forEach(attempt => {
@@ -58,8 +71,16 @@ exports.getTalentPoolData = async (req, res) => {
       if (!sId) return;
       
       if (!talentMap[sId]) {
+        const profile = profileMap[sId] || {}; // Profile data match kiya
         talentMap[sId] = { 
-          student: attempt.student, 
+          student: {
+            ...attempt.student,
+            // 🚀 ProfilePhoto aur College Details yahan mix kar di
+            profilePhoto: attempt.student.profilePhoto || profile.profilePhoto,
+            college: profile.college || "N/A",
+            branch: profile.branch || "N/A",
+            batchYear: profile.batchYear || "N/A"
+          }, 
           totalScore: 0, totalQuiz: 0, totalCoding: 0, totalProject: 0, 
           totalApps: 0, hiredCount: 0 
         };
@@ -74,7 +95,7 @@ exports.getTalentPoolData = async (req, res) => {
     });
 
     const talentPool = Object.values(talentMap).map(t => ({
-      ...t.student._doc,
+      ...t.student, // Ab isme photo, college, sab hoga
       avgScore: Math.round(t.totalScore / t.totalApps),
       quiz: Math.round(t.totalQuiz / t.totalApps),
       coding: Math.round(t.totalCoding / t.totalApps),
