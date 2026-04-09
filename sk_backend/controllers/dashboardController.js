@@ -238,21 +238,19 @@ exports.getDashboardData = async (req, res) => {
     const totalApplicants = await TestAttempt.countDocuments({ company: { $in: jobIds } });
     const hiredCandidates = await TestAttempt.countDocuments({ company: { $in: jobIds }, status: "Hired" });
 
-    // 1. Fetch Test Attempts (Populating Job titles)
+    // 1. Fetch Test Attempts (Populating Job titles safely)
     const allAttempts = await TestAttempt.find({ 
       company: { $in: jobIds }, 
       status: { $in: ["completed", "In Review", "Hired", "Rejected"] } 
     })
     .populate("student", "name email profilePhoto") 
-    .populate("company", "title") // Agar job ka ID 'company' field me save hai
-    .populate("jobId", "title")   // Agar job ka ID 'jobId' field me save hai
-    .lean(); // Lean zaroori hai taaki data fast aur modify ho sake
+    .populate("company", "title") // 🚀 Sirf company use kiya (jo aapke purane code me chal raha tha)
+    .lean(); 
 
     // 2. 🚀 SMART FETCH: Photo nikaalne ke liye StudentProfile fetch kar rahe hain
-    const studentIds = [...new Set(allAttempts.map(a => a.student?._id?.toString()).filter(Boolean))];
+    const StudentProfile = require("../models/StudentProfile"); // (Path check kar lena agar models folder kahin aur hai)
     
-    // (Ensure karna ki StudentProfile top pe require/import kiya hua ho)
-    const StudentProfile = require("../models/StudentProfile"); // Agar top me hai toh is line ko hata dena
+    const studentIds = [...new Set(allAttempts.map(a => a.student?._id?.toString()).filter(Boolean))];
     const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
 
     const profileMap = {};
@@ -265,29 +263,23 @@ exports.getDashboardData = async (req, res) => {
       const sId = a.student?._id?.toString();
       const profile = profileMap[sId] || {};
 
-      // Job title nikaalne ka solid tareeqa
-      const finalJobTitle = a.company?.title || a.jobId?.title || "Role not specified";
-
-      // Photo nikaalne ka solid tareeqa
-      const finalPhoto = a.student?.profilePhoto || profile.profilePhoto || null;
-
       return {
         id: a.student?._id,
         name: a.student?.name || "Unknown Applicant",
-        jobTitle: finalJobTitle, // 🚀 Backend se directly title ja raha hai
+        jobTitle: a.company?.title || "Role not specified", // 🚀 Perfectly mapped
         percentage: Math.round(a.finalScore || 0),
-        img: finalPhoto // 🚀 Backend se proper photo ja rahi hai
+        img: a.student?.profilePhoto || profile.profilePhoto || null // 🚀 Photo mapped
       };
     })
     .sort((a, b) => b.percentage - a.percentage)
-    .slice(0, 3); // Sirf top 3 bacche
+    .slice(0, 3);
 
     res.status(200).json({ totalJobs, totalApplicants, hiredCandidates, topStudents });
   } catch (error) {
+    console.error("❌ Dashboard API Crash:", error); // Agar phir issue aaya toh log me dikhega
     res.status(500).json({ error: error.message });
   }
 };
-
 
 // 8. GET PORTFOLIO DATA 
 exports.getStudentPortfolio = async (req, res) => {
