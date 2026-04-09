@@ -18,10 +18,30 @@ exports.getAnalyticsData = async (req, res) => {
     const jobs = await Job.find({ company: companyId });
     const jobIds = jobs.map(j => j._id);
 
+    // Lean use kiya taaki easily modify kar sakein
     const applications = await TestAttempt.find({ company: { $in: jobIds } })
-      .populate('student', 'name email');
+      .populate('student', 'name email profilePhoto')
+      .lean();
+
+    // 🚀 SMART FETCH: Photo pakka laane ke liye StudentProfile fetch kiya
+    const studentIds = [...new Set(applications.map(a => a.student?._id?.toString()).filter(Boolean))];
+    const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
+
+    const profileMap = {};
+    profiles.forEach(p => {
+      profileMap[p.user.toString()] = p;
+    });
+
+    // Applications ke andar student ki photo insert kar di
+    const enrichedApplications = applications.map(app => {
+      if (app.student) {
+        const profile = profileMap[app.student._id.toString()];
+        app.student.profilePhoto = app.student.profilePhoto || (profile ? profile.profilePhoto : null);
+      }
+      return app;
+    });
       
-    res.status(200).json({ jobs, applications });
+    res.status(200).json({ jobs, applications: enrichedApplications });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -208,7 +228,6 @@ exports.finalizeAssessment = async (req, res) => {
   }
 };
 
-// 1. DASHBOARD TAB (🚀 FIX: Added Job Title Population)
 exports.getDashboardData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
@@ -219,26 +238,56 @@ exports.getDashboardData = async (req, res) => {
     const totalApplicants = await TestAttempt.countDocuments({ company: { $in: jobIds } });
     const hiredCandidates = await TestAttempt.countDocuments({ company: { $in: jobIds }, status: "Hired" });
 
+    // 1. Fetch Test Attempts (Populating Job titles)
     const allAttempts = await TestAttempt.find({ 
       company: { $in: jobIds }, 
       status: { $in: ["completed", "In Review", "Hired", "Rejected"] } 
     })
-    .populate("student", "name email profilePhoto") // ProfilePhoto yahan add kar diya
-    .populate("company", "title"); // 🚀 Yahan humne job ka naam nikaal liya
+    .populate("student", "name email profilePhoto") 
+    .populate("company", "title") // Agar job ka ID 'company' field me save hai
+    .populate("jobId", "title")   // Agar job ka ID 'jobId' field me save hai
+    .lean(); // Lean zaroori hai taaki data fast aur modify ho sake
 
-    const topStudents = allAttempts.map(a => ({
-      id: a.student?._id,
-      name: a.student?.name,
-      jobTitle: a.company?.title || "N/A", // 🚀 Ab job title frontend par jayega
-      percentage: Math.round(a.finalScore || 0),
-      img: a.student?.profilePhoto // Image bhi pass kar di
-    })).sort((a, b) => b.percentage - a.percentage).slice(0, 3);
+    // 2. 🚀 SMART FETCH: Photo nikaalne ke liye StudentProfile fetch kar rahe hain
+    const studentIds = [...new Set(allAttempts.map(a => a.student?._id?.toString()).filter(Boolean))];
+    
+    // (Ensure karna ki StudentProfile top pe require/import kiya hua ho)
+    const StudentProfile = require("../models/StudentProfile"); // Agar top me hai toh is line ko hata dena
+    const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
+
+    const profileMap = {};
+    profiles.forEach(p => {
+      profileMap[p.user.toString()] = p;
+    });
+
+    // 3. Top Students Map & Sort
+    const topStudents = allAttempts.map(a => {
+      const sId = a.student?._id?.toString();
+      const profile = profileMap[sId] || {};
+
+      // Job title nikaalne ka solid tareeqa
+      const finalJobTitle = a.company?.title || a.jobId?.title || "Role not specified";
+
+      // Photo nikaalne ka solid tareeqa
+      const finalPhoto = a.student?.profilePhoto || profile.profilePhoto || null;
+
+      return {
+        id: a.student?._id,
+        name: a.student?.name || "Unknown Applicant",
+        jobTitle: finalJobTitle, // 🚀 Backend se directly title ja raha hai
+        percentage: Math.round(a.finalScore || 0),
+        img: finalPhoto // 🚀 Backend se proper photo ja rahi hai
+      };
+    })
+    .sort((a, b) => b.percentage - a.percentage)
+    .slice(0, 3); // Sirf top 3 bacche
 
     res.status(200).json({ totalJobs, totalApplicants, hiredCandidates, topStudents });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // 8. GET PORTFOLIO DATA 
 exports.getStudentPortfolio = async (req, res) => {

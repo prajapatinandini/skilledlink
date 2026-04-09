@@ -33,7 +33,6 @@ const AnalyticsTab = () => {
 
         // 🟢 2. MAP APPLICATIONS (Test Attempts)
         const formattedApps = rawApps.map(a => {
-          // Status mapping for HR View
           let currentStatus = a.status;
           if (currentStatus === "completed" || currentStatus === "Pending") {
             currentStatus = "In Review";
@@ -41,7 +40,7 @@ const AnalyticsTab = () => {
           
           const finalName = a.student?.name || "Unknown Applicant";
 
-          // 🚀 PHOTO LOGIC FIX: Check for profilePhoto and append API_URL if needed
+          // 🚀 SMART PHOTO LOGIC: Cloudinary aur Render dono ke liye
           const rawImg = a.student?.profilePhoto || a.student?.img;
           const finalImg = rawImg 
             ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
@@ -423,6 +422,7 @@ const AnalyticsTab = () => {
                 }}>
                   {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
                 </span>
+                {/* 🚀 SAFETY FIX: Added onerror=null to prevent infinite loops */}
                 <img
                   src={s.img}
                   alt={s.name}
@@ -434,8 +434,10 @@ const AnalyticsTab = () => {
                     border: "2px solid #e0d9f5",
                     flexShrink: 0
                   }}
-                  // Ek chhota sa fallback, in case server se image ud jaye
-                  onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=f3f0ff&color=553f9a&bold=true`; }}
+                  onError={(e) => { 
+                    e.target.onerror = null; 
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=f3f0ff&color=553f9a&bold=true`; 
+                  }}
                 />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "14px", fontWeight: 700, color: "#2d1f6e" }}>{s.name}</div>

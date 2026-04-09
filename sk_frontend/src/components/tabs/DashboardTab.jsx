@@ -15,7 +15,6 @@ const DashboardTab = ({ onStudentClick }) => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        // 🛠️ Calling the dashboard route we created earlier
         const res = await axios.get(`${API_URL}/api/dashboard`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
@@ -34,15 +33,13 @@ const DashboardTab = ({ onStudentClick }) => {
     return <div className="content-box" style={{ textAlign: "center", padding: "40px", color: "#553f9a", fontWeight: "bold" }}>Loading Dashboard... ⏳</div>;
   }
 
-  // 🛠️ MAPPING DATA: Backend ke naye variable names (totalApplicants, hiredCandidates, etc.) ke hisaab se map kiya
   const stats = {
     applied: data?.totalApplicants || 0,
     hired: data?.hiredCandidates || 0,
-    companies: 1, // Ek hi company logged in hoti hai, ya system ki total dikhani hai toh API me add kar lena
+    companies: 1, 
     jobs: data?.totalJobs || data?.activeJobs || 0
   };
   
-  // 🛠️ Agar backend top scorers nahi bhej raha abhi, toh empty array rakhenge crash se bachne ke liye
   const topStudents = data?.topStudents || [];
 
   return (
@@ -53,7 +50,7 @@ const DashboardTab = ({ onStudentClick }) => {
         {[
           { icon: "👨‍🎓", value: stats.applied, title: "Students Applied", desc: "Total applicants" },
           { icon: "🏆", value: stats.hired, title: "Students Hired", desc: "Successfully placed" },
-          { icon: "🏢", value: stats.companies, title: "Companies", desc: "Partner companies" }, // Ise aap hata sakte ho agar irrelevant ho
+          { icon: "🏢", value: stats.companies, title: "Companies", desc: "Partner companies" }, 
           { icon: "💼", value: stats.jobs, title: "Jobs Posted", desc: "Active positions" }
         ].map((card, index) => (
           <div key={index} style={{
@@ -64,7 +61,6 @@ const DashboardTab = ({ onStudentClick }) => {
             position: "relative",
             overflow: "hidden"
           }}>
-            {/* Decorative Background Blob */}
             <div style={{
               position: "absolute", top: "-20px", right: "-20px", width: "80px", height: "80px",
               borderRadius: "50%", background: "rgba(85, 63, 154, 0.04)"
@@ -107,11 +103,15 @@ const DashboardTab = ({ onStudentClick }) => {
             </div>
           ) : (
             topStudents.map((student, index) => {
-              // 🚀 PHOTO LOGIC FIX HERE 🚀
-              const rawImg = student.img || student.profilePhoto;
+              const studentName = student.name || "Unknown Applicant";
+              // 🚀 NEW: Job Title Fallback
+              const jobTitle = student.jobTitle || "Role not specified";
+
+              // 🚀 SMART PHOTO LOGIC FIX 🚀
+              const rawImg = student.profilePhoto || student.img;
               const finalImg = rawImg 
                 ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "S")}&background=f3f0ff&color=553f9a&bold=true`;
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=f3f0ff&color=553f9a&bold=true`;
 
               return (
                 <div 
@@ -135,25 +135,32 @@ const DashboardTab = ({ onStudentClick }) => {
                   </div>
                   <img 
                     src={finalImg} 
-                    alt={student.name} 
+                    alt={studentName} 
                     style={{ 
-                      width: "40px", 
-                      height: "40px", 
+                      width: "44px", 
+                      height: "44px", 
                       borderRadius: "50%", 
                       border: "2px solid rgba(255,255,255,0.5)", 
                       marginRight: "16px", 
                       objectFit: "cover",
-                      backgroundColor: "#fff" // Optional: Just to ensure transparent avatars look good
+                      backgroundColor: "#fff"
                     }} 
-                    // Fallback incase the file is missing from the server
                     onError={(e) => { 
                       e.target.onerror = null; 
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "S")}&background=f3f0ff&color=553f9a&bold=true`; 
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(studentName)}&background=f3f0ff&color=553f9a&bold=true`; 
                     }}
                   />
-                  <div style={{ flex: 1, fontSize: "16px", fontWeight: "600" }}>
-                    {student.name}
+                  
+                  {/* 🚀 NEW: Added Job Title Container */}
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <div style={{ fontSize: "16px", fontWeight: "700" }}>
+                      {studentName}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.75)", marginTop: "2px" }}>
+                      💼 {jobTitle}
+                    </div>
                   </div>
+
                   <div style={{ fontSize: "18px", fontWeight: "800" }}>
                     {student.percentage || student.averageScore || 0}%
                   </div>
