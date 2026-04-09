@@ -4,7 +4,7 @@ const nodemailer = require("nodemailer");
 // 🚀 FIXED TRANSPORTER: Port 465 use kar rahe hain jo timeout nahi deta
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 465, // 🔒 Secure Port
+  port: 2525, // 🔒 Secure Port
   secure: true, // Port 465 ke liye true hona zaroori hai
   auth: {
     user: process.env.SMTP_USER, 

@@ -5,6 +5,9 @@ const User = require('../models/User');
 const Project = require('../models/Project');
 const Evaluation = require('../models/Evaluation');
 
+// 🚀 LOCHA FIX 1: Email service ko top par import karna zaroori hai
+const { sendStatusEmail } = require("../utils/sendEmail"); 
+
 // Helper Function: Company ki saari jobs ke IDs nikalne ke liye
 const getCompanyJobIds = async (companyId) => {
   const jobs = await Job.find({ company: companyId }).select('_id');
@@ -18,12 +21,10 @@ exports.getAnalyticsData = async (req, res) => {
     const jobs = await Job.find({ company: companyId });
     const jobIds = jobs.map(j => j._id);
 
-    // Lean use kiya taaki easily modify kar sakein
     const applications = await TestAttempt.find({ company: { $in: jobIds } })
       .populate('student', 'name email profilePhoto')
       .lean();
 
-    // 🚀 SMART FETCH: Photo pakka laane ke liye StudentProfile fetch kiya
     const studentIds = [...new Set(applications.map(a => a.student?._id?.toString()).filter(Boolean))];
     const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
 
@@ -32,7 +33,6 @@ exports.getAnalyticsData = async (req, res) => {
       profileMap[p.user.toString()] = p;
     });
 
-    // Applications ke andar student ki photo insert kar di
     const enrichedApplications = applications.map(app => {
       if (app.student) {
         const profile = profileMap[app.student._id.toString()];
@@ -64,18 +64,16 @@ exports.getPlacementsData = async (req, res) => {
 };
 
 // 4. TALENT POOL TAB
- exports.getTalentPoolData = async (req, res) => {
+exports.getTalentPoolData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
     const jobs = await Job.find({ company: companyId }).select('_id');
     const jobIds = jobs.map(job => job._id);
 
-    // Lean ka use kiya taaki easily modify kar sakein
     const attempts = await TestAttempt.find({ company: { $in: jobIds } })
       .populate('student', 'name email profilePhoto')
       .lean();
 
-    // 🚀 SMART FETCH: Ek hi baar mein saare students ki profile fetch kar li
     const studentIds = [...new Set(attempts.map(a => a.student?._id?.toString()).filter(Boolean))];
     const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
     
@@ -90,11 +88,10 @@ exports.getPlacementsData = async (req, res) => {
       if (!sId) return;
       
       if (!talentMap[sId]) {
-        const profile = profileMap[sId] || {}; // Profile data match kiya
+        const profile = profileMap[sId] || {};
         talentMap[sId] = { 
           student: {
             ...attempt.student,
-            // 🚀 ProfilePhoto aur College Details yahan mix kar di
             profilePhoto: attempt.student.profilePhoto || profile.profilePhoto,
             college: profile.college || "N/A",
             branch: profile.branch || "N/A",
@@ -114,7 +111,7 @@ exports.getPlacementsData = async (req, res) => {
     });
 
     const talentPool = Object.values(talentMap).map(t => ({
-      ...t.student, // Ab isme photo, college, sab hoga
+      ...t.student,
       avgScore: Math.round(t.totalScore / t.totalApps),
       quiz: Math.round(t.totalQuiz / t.totalApps),
       coding: Math.round(t.totalCoding / t.totalApps),
@@ -129,17 +126,14 @@ exports.getPlacementsData = async (req, res) => {
   }
 };
 
-// 5. APPLICANT HISTORY (🚀 FIX: Added ProfilePhoto & Resume logic)
+// 5. APPLICANT HISTORY
 exports.getJobAttempts = async (req, res) => {
   try {
     const { jobId } = req.params;
-    
-    // lean() zaruri hai taaki hum object modify kar sakein
     const attempts = await TestAttempt.find({ company: jobId }) 
       .populate("student", "name email profilePhoto resumeUrl")
       .lean(); 
       
-    // 🚀 SMART FETCH: Agar photo User schema mein nahi hai, toh StudentProfile mein dhoondho
     const attemptsWithProfiles = await Promise.all(
       attempts.map(async (attempt) => {
         if (attempt.student && attempt.student._id) {
@@ -159,21 +153,31 @@ exports.getJobAttempts = async (req, res) => {
   }
 };
 
-// 6. UPDATE STATUS
+// 6. UPDATE STATUS (🚀 LOCHA FIX: Email trigger yahan add kar diya)
 exports.updateAttemptStatus = async (req, res) => {
   try {
     const { attemptId } = req.params;
     const { status } = req.body; 
 
+    // Find and update the attempt, populating student and company for the email
     const attempt = await TestAttempt.findByIdAndUpdate(
       attemptId, 
       { status: status }, 
       { new: true }
-    );
+    ).populate('student', 'name email').populate('company', 'title companyName');
 
     if (!attempt) return res.status(404).json({ message: "Attempt not found" });
 
-    res.status(200).json({ message: `Status updated to ${status}`, attempt });
+    // 📧 Agar status Hired ya Rejected hai toh email bhejo
+    if (status === "Hired" || status === "Rejected") {
+        const companyName = attempt.company?.companyName || attempt.company?.title || "Our Partner Company";
+        
+        // Background mein bhej rahe hain (No await for instant response)
+        sendStatusEmail(attempt.student.email, attempt.student.name, status, companyName);
+        console.log(`🚀 Background Email trigger for ${attempt.student.email}`);
+    }
+
+    res.status(200).json({ message: `Status updated to ${status} and email process started`, attempt });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -227,28 +231,25 @@ exports.finalizeAssessment = async (req, res) => {
   }
 };
 
+// 10. DASHBOARD DATA
 exports.getDashboardData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
     const totalJobs = await Job.countDocuments({ company: companyId });
-    const jobs = await Job.find({ company: companyId }).select('_id');
-    const jobIds = jobs.map(job => job._id);
+    const jobsArr = await Job.find({ company: companyId }).select('_id');
+    const jobIds = jobsArr.map(job => job._id);
 
     const totalApplicants = await TestAttempt.countDocuments({ company: { $in: jobIds } });
     const hiredCandidates = await TestAttempt.countDocuments({ company: { $in: jobIds }, status: "Hired" });
 
-    // 1. Fetch Test Attempts (Populating Job titles safely)
     const allAttempts = await TestAttempt.find({ 
       company: { $in: jobIds }, 
       status: { $in: ["completed", "In Review", "Hired", "Rejected"] } 
     })
     .populate("student", "name email profilePhoto") 
-    .populate("company", "title") // 🚀 Sirf company use kiya (jo aapke purane code me chal raha tha)
+    .populate("company", "title")
     .lean(); 
 
-    // 2. 🚀 SMART FETCH: Photo nikaalne ke liye StudentProfile fetch kar rahe hain
-    const StudentProfile = require("../models/StudentProfile"); // (Path check kar lena agar models folder kahin aur hai)
-    
     const studentIds = [...new Set(allAttempts.map(a => a.student?._id?.toString()).filter(Boolean))];
     const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
 
@@ -257,7 +258,6 @@ exports.getDashboardData = async (req, res) => {
       profileMap[p.user.toString()] = p;
     });
 
-    // 3. Top Students Map & Sort
     const topStudents = allAttempts.map(a => {
       const sId = a.student?._id?.toString();
       const profile = profileMap[sId] || {};
@@ -265,9 +265,9 @@ exports.getDashboardData = async (req, res) => {
       return {
         id: a.student?._id,
         name: a.student?.name || "Unknown Applicant",
-        jobTitle: a.company?.title || "Role not specified", // 🚀 Perfectly mapped
+        jobTitle: a.company?.title || "Role not specified",
         percentage: Math.round(a.finalScore || 0),
-        img: a.student?.profilePhoto || profile.profilePhoto || null // 🚀 Photo mapped
+        img: a.student?.profilePhoto || profile.profilePhoto || null 
       };
     })
     .sort((a, b) => b.percentage - a.percentage)
@@ -275,7 +275,7 @@ exports.getDashboardData = async (req, res) => {
 
     res.status(200).json({ totalJobs, totalApplicants, hiredCandidates, topStudents });
   } catch (error) {
-    console.error("❌ Dashboard API Crash:", error); // Agar phir issue aaya toh log me dikhega
+    console.error("❌ Dashboard API Crash:", error);
     res.status(500).json({ error: error.message });
   }
 };
