@@ -58,7 +58,6 @@ exports.getTalentPoolData = async (req, res) => {
       if (!sId) return;
       
       if (!talentMap[sId]) {
-        // Naye variables add kiye teeno scores ke liye
         talentMap[sId] = { 
           student: attempt.student, 
           totalScore: 0, totalQuiz: 0, totalCoding: 0, totalProject: 0, 
@@ -66,7 +65,6 @@ exports.getTalentPoolData = async (req, res) => {
         };
       }
       
-      // Seedha database ke numbers add kar rahe hain
       talentMap[sId].totalScore += (attempt.finalScore || 0);
       talentMap[sId].totalQuiz += (attempt.aptitudeScore || 0);
       talentMap[sId].totalCoding += (attempt.codingPercentage || 0);
@@ -77,7 +75,6 @@ exports.getTalentPoolData = async (req, res) => {
 
     const talentPool = Object.values(talentMap).map(t => ({
       ...t.student._doc,
-      // Frontend ko exact averages bhej rahe hain
       avgScore: Math.round(t.totalScore / t.totalApps),
       quiz: Math.round(t.totalQuiz / t.totalApps),
       coding: Math.round(t.totalCoding / t.totalApps),
@@ -125,26 +122,18 @@ exports.updateAttemptStatus = async (req, res) => {
   }
 };
 
-// 7. GET APPLICANT PROJECTS (Data for HR Dashboard Modal)
+// 7. GET APPLICANT PROJECTS
 exports.getApplicantProjects = async (req, res) => {
   try {
     const { attemptId } = req.params;
-
-    // 1. Fetch Attempt
     const attempt = await TestAttempt.findById(attemptId).populate('student');
-    if (!attempt) {
-      return res.status(404).json({ message: "Attempt not found" });
-    }
+    if (!attempt) return res.status(404).json({ message: "Attempt not found" });
 
-    // 2. Fetch Projects (Pehle attemptId se try karo, warna student userId se nikal lo)
     let projects = await Project.find({ attemptId: attemptId }).lean();
-    
     if (projects.length === 0 && attempt.student) {
-      // Fallback: agar attemptId se link nahi hue, toh student ki purani ID se le lo
       projects = await Project.find({ userId: attempt.student._id }).lean();
     }
 
-    // 3. Send Response
     res.status(200).json({
       projects: projects.map(p => ({
         title: p.title || "GitHub Project",
@@ -152,18 +141,13 @@ exports.getApplicantProjects = async (req, res) => {
         liveUrl: p.liveUrl,
         score: attempt.projectScore || 0 
       })),
-      evaluation: { 
-        score: attempt.projectScore || 0 
-      }
+      evaluation: { score: attempt.projectScore || 0 }
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch projects" });
   }
 };
-
-
 
 // 9. FINAL SUBMIT
 exports.finalizeAssessment = async (req, res) => {
@@ -173,17 +157,11 @@ exports.finalizeAssessment = async (req, res) => {
 
     const updatedAttempt = await TestAttempt.findByIdAndUpdate(
       attemptId,
-      { 
-        projectScore: projectScore || 0,
-        finalScore: finalScore || 0,
-        status: "completed" 
-      },
+      { projectScore: projectScore || 0, finalScore: finalScore || 0, status: "completed" },
       { new: true }
     );
 
-    if (!updatedAttempt) {
-      return res.status(404).json({ message: "Test attempt not found" });
-    }
+    if (!updatedAttempt) return res.status(404).json({ message: "Test attempt not found" });
 
     res.status(200).json({ message: "Assessment successfully finalized!", attempt: updatedAttempt });
   } catch (error) {
@@ -192,12 +170,11 @@ exports.finalizeAssessment = async (req, res) => {
   }
 };
 
-// 1. DASHBOARD TAB (Top Students list mein exact Final Score dikhane ke liye)
+// 1. DASHBOARD TAB
 exports.getDashboardData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
     const totalJobs = await Job.countDocuments({ company: companyId });
-    
     const jobs = await Job.find({ company: companyId }).select('_id');
     const jobIds = jobs.map(job => job._id);
 
@@ -209,11 +186,10 @@ exports.getDashboardData = async (req, res) => {
       status: { $in: ["completed", "In Review", "Hired", "Rejected"] } 
     }).populate("student", "name email");
 
-    // 🟢 EXACT DB MAPPING: Seedha finalScore utha rahe hain (No calculation)
     const topStudents = allAttempts.map(a => ({
       id: a.student?._id,
       name: a.student?.name,
-      percentage: Math.round(a.finalScore || 0) // Yahan 27 aayega
+      percentage: Math.round(a.finalScore || 0)
     })).sort((a, b) => b.percentage - a.percentage).slice(0, 3);
 
     res.status(200).json({ totalJobs, totalApplicants, hiredCandidates, topStudents });
@@ -222,22 +198,20 @@ exports.getDashboardData = async (req, res) => {
   }
 };
 
-
-// 8. GET PORTFOLIO DATA (Portfolio Modal mein exact 4 scores dikhane ke liye)
+// 8. GET PORTFOLIO DATA (Fixed: Added profilePhoto and resumeUrl)
 exports.getStudentPortfolio = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let profile = await StudentProfile.findById(id).populate('user', 'name email');
-    let user = profile ? profile.user : await User.findById(id).select('name email');
+    // User model mein bhi check kar lenge just in case
+    let profile = await StudentProfile.findById(id).populate('user', 'name email profilePhoto resumeUrl');
+    let user = profile ? profile.user : await User.findById(id).select('name email profilePhoto resumeUrl');
 
     if (!user) return res.status(404).json({ error: "Student not found" });
     if (!profile) profile = await StudentProfile.findOne({ user: user._id });
 
-    // 🟢 Student ke saare attempts nikale aur sabse latest wala sabse upar rakha
     const attempts = await TestAttempt.find({ student: user._id }).sort({ createdAt: -1 });
 
-    // 🟢 EXACT DB MAPPING: Latest attempt ke exact numbers (Average karna band kar diya)
     const latestAttempt = attempts[0]; 
     const quizScore = latestAttempt ? Math.round(latestAttempt.aptitudeScore || 0) : 0;
     const codingScore = latestAttempt ? Math.round(latestAttempt.codingPercentage || 0) : 0;
@@ -249,6 +223,11 @@ exports.getStudentPortfolio = async (req, res) => {
     res.status(200).json({
       name:         user.name,
       email:        user.email,
+      
+      // 🚀 YAHAN THI PROBLEM! Ab photo aur resume frontend ko jayenge 🚀
+      profilePhoto: profile?.profilePhoto || user.profilePhoto || null,
+      resumeUrl:    profile?.resumeUrl || user.resumeUrl || null,
+      
       degree:       profile?.branch    || "N/A",  
       college:      profile?.college   || "N/A",
       year:         profile?.batchYear?.toString() || "N/A",
@@ -256,11 +235,10 @@ exports.getStudentPortfolio = async (req, res) => {
       phone:        profile?.phone     || "N/A",
       github:       profile?.githubUsername || "N/A",
       linkedin:     profile?.linkedin  || "N/A",
-      // 🟢 Charo exact numbers frontend ko bhej diye
-      quizScore,     // 33
-      codingScore,   // 0
-      projectScore,  // 44
-      finalScore,    // 27
+      quizScore,     
+      codingScore,   
+      projectScore,  
+      finalScore,    
       skills:       profile?.skills    || [],
       projects:     projects.map(p => ({ title: p.title, repoUrl: p.repoUrl })), 
       experience:   profile?.experience ? [{ role: profile.experience, company: "Previous Work", duration: "N/A" }] : [],
