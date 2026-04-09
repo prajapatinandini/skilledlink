@@ -135,7 +135,6 @@ const StudentPage = () => {
     if (!token) { navigate("/login/student"); return; }
     setLoading(true);
     try {
-      // ✅ FIX: Added "/api" prefix to all routes
       const profRes = await axios.get(`${API_URL}/api/student/me`, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -156,7 +155,6 @@ const StudentPage = () => {
       }
     } catch (err) {
       console.error("Dashboard Fetch Error:", err);
-      // ✅ FIX: If profile not found, send to profile completion
       if (err.response && err.response.status === 404) { 
         navigate("/student/profile"); 
       }
@@ -176,7 +174,6 @@ const StudentPage = () => {
   const handleApply = async (jobId) => {
     try {
       setIsApplying(true);
-      // ✅ FIX: Added "/api" prefix
       const res = await axios.post(`${API_URL}/api/assessment/start/${jobId}`, {}, { 
         headers: { Authorization: `Bearer ${token}` } 
       });
@@ -266,13 +263,35 @@ const StudentPage = () => {
 
                   <h3 style={{ color: '#2d1f6e', marginBottom: '20px' }}>Available Openings</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                    {jobsData.filter(j => j.company?._id === selectedCompany?._id).map((job) => (
-                      <div key={job._id} style={{ ...cardStyle, borderLeft: '6px solid #553f9a' }} onClick={() => { setSelectedJob(job); setViewLevel("JOB_DETAILS"); }}>
-                        <h3 style={{ color: '#2d1f6e', margin: '0 0 10px 0' }}>{job.title}</h3>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', fontSize: '14px' }}><span>💰 {job.salary}</span><span>💼 {job.experience}</span></div>
-                        <button style={{ ...viewBtnStyle, background: '#f3f0ff', marginTop: '15px' }}>Check Details</button>
-                      </div>
-                    ))}
+                    {jobsData.filter(j => j.company?._id === selectedCompany?._id).map((job) => {
+                      // 🚀 LOGIC FOR EXPIRED JOBS
+                      const isExpired = job.daysLeft <= 0;
+                      return (
+                        <div key={job._id} 
+                          style={{ 
+                            ...cardStyle, 
+                            borderLeft: isExpired ? '6px solid #ef4444' : '6px solid #553f9a',
+                            opacity: isExpired ? 0.7 : 1,
+                            position: 'relative'
+                          }} 
+                          onClick={() => { setSelectedJob(job); setViewLevel("JOB_DETAILS"); }}>
+                          
+                          {/* 🔴 EXPIRED BADGE */}
+                          {isExpired && (
+                            <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>EXPIRED</span>
+                          )}
+
+                          <h3 style={{ color: '#2d1f6e', margin: '0 0 10px 0' }}>{job.title}</h3>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', fontSize: '14px' }}>
+                            <span>💰 {job.salary}</span>
+                            <span style={{ color: isExpired ? '#ef4444' : '#1890ff', fontWeight: 'bold' }}>
+                               {isExpired ? '⌛ Closed' : `⌛ ${job.daysLeft} Days Left`}
+                            </span>
+                          </div>
+                          <button style={{ ...viewBtnStyle, background: isExpired ? '#fef2f2' : '#f8faff', marginTop: '15px' }}>Check Details</button>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -280,27 +299,59 @@ const StudentPage = () => {
               {viewLevel === "JOB_DETAILS" && (
                 <div style={cardStyle}>
                   <button onClick={() => setViewLevel("JOB_LIST")} style={backLinkStyle}>← Back to All Roles</button>
-                  <div style={detailHeaderStyle}>
-                    <div style={{ flex: 1 }}>
-                      <h1 style={{ margin: 0, color: '#2d1f6e' }}>{selectedJob.title}</h1>
-                      <p style={{ color: '#553f9a', fontWeight: 'bold', fontSize: '18px' }}>{selectedCompany?.companyName || selectedCompany?.name}</p>
-                      <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}><span style={badgeStyle}>Exp: {selectedJob.experience}</span><span style={badgeStyle}>Salary: {selectedJob.salary}</span></div>
-                    </div>
-                    <button style={{ ...applyBtnStyle, opacity: isApplying ? 0.7 : 1 }} onClick={() => handleApply(selectedJob._id)} disabled={isApplying}>{isApplying ? "Starting..." : "Apply Now 🚀"}</button>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '30px' }}>
-                    <div>
-                      <h4 style={{ color: '#2d1f6e', marginBottom: '10px' }}>Role Description</h4><p style={descTextStyle}>{selectedJob.description}</p>
-                      {selectedJob.skills && selectedJob.skills.length > 0 && (<div style={{ marginTop: '20px' }}><h4 style={{ color: '#2d1f6e', marginBottom: '10px' }}>Required Skills</h4><div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>{selectedJob.skills.map((s, i) => <span key={i} style={tagStyle}>{s}</span>)}</div></div>)}
-                    </div>
-                    <div style={assessmentBoxStyle}>
-                      <h4 style={{ margin: '0 0 15px 0', color: '#2d1f6e' }}>Assessment Rounds</h4>
-                      <div style={roundCardStyle}>📂 1. Project Review</div>
-                      {selectedJob.quiz?.length > 0 && <div style={{ ...roundCardStyle, color: '#1890ff' }}>🧠 2. Aptitude Quiz ({selectedJob.quiz.length} Qs)</div>}
-                      {selectedJob.coding?.length > 0 && <div style={{ ...roundCardStyle, color: '#531dab' }}>💻 3. Coding Round ({selectedJob.coding.length} Problems)</div>}
-                      <p style={{ fontSize: '12px', color: '#999', marginTop: '15px' }}>*You must clear each round to proceed.</p>
-                    </div>
-                  </div>
+                  
+                  {/* 🚀 EXPIRED LOGIC FOR BUTTON AND BADGE */}
+                  {(() => {
+                    const isExpired = selectedJob.daysLeft <= 0;
+                    return (
+                      <>
+                        <div style={detailHeaderStyle}>
+                          <div style={{ flex: 1 }}>
+                            <h1 style={{ margin: 0, color: '#2d1f6e' }}>{selectedJob.title}</h1>
+                            <p style={{ color: '#553f9a', fontWeight: 'bold', fontSize: '18px' }}>{selectedCompany?.companyName || selectedCompany?.name}</p>
+                            <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+                                <span style={badgeStyle}>Exp: {selectedJob.experience}</span>
+                                <span style={badgeStyle}>Salary: {selectedJob.salary}</span>
+                                {isExpired ? (
+                                   <span style={{ ...badgeStyle, background: '#fee2e2', color: '#ef4444' }}>🔴 Application Closed</span>
+                                ) : (
+                                   <span style={badgeStyle}>⌛ {selectedJob.daysLeft} Days Left</span>
+                                )}
+                            </div>
+                          </div>
+                          
+                          <button 
+                            style={{ 
+                                ...applyBtnStyle, 
+                                opacity: (isApplying || isExpired) ? 0.6 : 1,
+                                background: isExpired ? '#9ca3af' : 'linear-gradient(135deg,#553f9a,#7b5fc4)',
+                                cursor: isExpired ? 'not-allowed' : 'pointer'
+                            }} 
+                            onClick={() => !isExpired && handleApply(selectedJob._id)} 
+                            disabled={isApplying || isExpired}
+                          >
+                            {isExpired ? "Closed 🛑" : isApplying ? "Starting..." : "Apply Now 🚀"}
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '30px' }}>
+                          <div>
+                            <h4 style={{ color: '#2d1f6e', marginBottom: '10px' }}>Role Description</h4><p style={descTextStyle}>{selectedJob.description}</p>
+                            {selectedJob.skills && selectedJob.skills.length > 0 && (<div style={{ marginTop: '20px' }}><h4 style={{ color: '#2d1f6e', marginBottom: '10px' }}>Required Skills</h4><div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>{selectedJob.skills.map((s, i) => <span key={i} style={tagStyle}>{s}</span>)}</div></div>)}
+                          </div>
+                          <div style={assessmentBoxStyle}>
+                            <h4 style={{ margin: '0 0 15px 0', color: '#2d1f6e' }}>Assessment Rounds</h4>
+                            <div style={roundCardStyle}>📂 1. Project Review</div>
+                            {selectedJob.quiz?.length > 0 && <div style={{ ...roundCardStyle, color: '#1890ff' }}>🧠 2. Aptitude Quiz ({selectedJob.quiz.length} Qs)</div>}
+                            {selectedJob.coding?.length > 0 && <div style={{ ...roundCardStyle, color: '#531dab' }}>💻 3. Coding Round ({selectedJob.coding.length} Problems)</div>}
+                            <p style={{ fontSize: '12px', color: '#999', marginTop: '15px' }}>
+                                {isExpired ? "*Applications for this role have been closed." : "*You must clear each round to proceed."}
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </>
@@ -311,14 +362,14 @@ const StudentPage = () => {
   );
 };
 
-// Styles (same as before)
+// Styles
 const sidebarStyle = { width: '280px', background: '#553f9a', padding: '40px 20px', display: 'flex', flexDirection: 'column', boxShadow: '5px 0 15px rgba(0,0,0,0.05)' };
 const sideBtnStyle = { padding: '16px 20px', textAlign: 'left', border: 'none', color: '#fff', borderRadius: '14px', cursor: 'pointer', fontWeight: '600', transition: '0.2s' };
 const cardStyle = { background: '#fff', padding: '30px', borderRadius: '24px', border: '1.5px solid #ede8fb', boxShadow: '0 8px 24px rgba(85,63,154,0.04)', cursor: 'pointer', transition: '0.3s' };
 const cardTitleStyle = { margin: '0 0 15px 0', fontSize: '19px', color: '#2d1f6e', borderBottom: '2px solid #f3f0ff', paddingBottom: '12px', fontWeight: '800' };
 const viewBtnStyle = { width: '100%', marginTop: '20px', padding: '12px', borderRadius: '12px', border: 'none', background: '#f8faff', color: '#553f9a', fontWeight: 'bold', cursor: 'pointer' };
 const backLinkStyle = { background: 'none', border: 'none', color: '#553f9a', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px', marginBottom: '20px' };
-const applyBtnStyle = { background: 'linear-gradient(135deg,#553f9a,#7b5fc4)', color: '#fff', border: 'none', padding: '16px 35px', borderRadius: '14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', transition: '0.2s' };
+const applyBtnStyle = { color: '#fff', border: 'none', padding: '16px 35px', borderRadius: '14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px', transition: '0.2s' };
 const detailHeaderStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #f3f0ff', paddingBottom: '25px', marginBottom: '25px', marginTop: '10px' };
 const assessmentBoxStyle = { background: '#f8faff', padding: '20px', borderRadius: '20px', border: '1px solid #ede8fb' };
 const roundCardStyle = { background: '#fff', padding: '12px 15px', borderRadius: '10px', marginBottom: '10px', fontWeight: 'bold', fontSize: '14px', border: '1px solid #ede8fb' };
