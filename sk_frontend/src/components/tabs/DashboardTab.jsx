@@ -5,8 +5,7 @@ const DashboardTab = ({ onStudentClick }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  
-const API_URL = "https://skilledlink-f4lp.onrender.com";
+  const API_URL = "https://skilledlink-f4lp.onrender.com";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -107,39 +106,60 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
               No students data available yet. Review some applicants to see top performers!
             </div>
           ) : (
-            topStudents.map((student, index) => (
-              <div 
-                key={student.id || student._id} 
-                onClick={() => onStudentClick && onStudentClick(student)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  background: index === 0 ? "linear-gradient(90deg, #4c3289, #6a55b8)" : index === 1 ? "linear-gradient(90deg, #6a55b8, #8573cc)" : "linear-gradient(90deg, #8573cc, #a394d8)",
-                  borderRadius: "12px",
-                  padding: "16px 24px",
-                  color: "#ffffff",
-                  cursor: "pointer",
-                  transition: "transform 0.2s",
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = "translateX(5px)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "translateX(0)"}
-              >
-                <div style={{ fontSize: "16px", fontWeight: "800", width: "30px" }}>
-                  {student.rank || index + 1}
+            topStudents.map((student, index) => {
+              // 🚀 PHOTO LOGIC FIX HERE 🚀
+              const rawImg = student.img || student.profilePhoto;
+              const finalImg = rawImg 
+                ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "S")}&background=f3f0ff&color=553f9a&bold=true`;
+
+              return (
+                <div 
+                  key={student.id || student._id} 
+                  onClick={() => onStudentClick && onStudentClick(student)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    background: index === 0 ? "linear-gradient(90deg, #4c3289, #6a55b8)" : index === 1 ? "linear-gradient(90deg, #6a55b8, #8573cc)" : "linear-gradient(90deg, #8573cc, #a394d8)",
+                    borderRadius: "12px",
+                    padding: "16px 24px",
+                    color: "#ffffff",
+                    cursor: "pointer",
+                    transition: "transform 0.2s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = "translateX(5px)"}
+                  onMouseLeave={e => e.currentTarget.style.transform = "translateX(0)"}
+                >
+                  <div style={{ fontSize: "16px", fontWeight: "800", width: "30px" }}>
+                    {student.rank || index + 1}
+                  </div>
+                  <img 
+                    src={finalImg} 
+                    alt={student.name} 
+                    style={{ 
+                      width: "40px", 
+                      height: "40px", 
+                      borderRadius: "50%", 
+                      border: "2px solid rgba(255,255,255,0.5)", 
+                      marginRight: "16px", 
+                      objectFit: "cover",
+                      backgroundColor: "#fff" // Optional: Just to ensure transparent avatars look good
+                    }} 
+                    // Fallback incase the file is missing from the server
+                    onError={(e) => { 
+                      e.target.onerror = null; 
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(student.name || "S")}&background=f3f0ff&color=553f9a&bold=true`; 
+                    }}
+                  />
+                  <div style={{ flex: 1, fontSize: "16px", fontWeight: "600" }}>
+                    {student.name}
+                  </div>
+                  <div style={{ fontSize: "18px", fontWeight: "800" }}>
+                    {student.percentage || student.averageScore || 0}%
+                  </div>
                 </div>
-                <img 
-                  src={student.img || "/default.png"} 
-                  alt={student.name} 
-                  style={{ width: "40px", height: "40px", borderRadius: "50%", border: "2px solid rgba(255,255,255,0.5)", marginRight: "16px", objectFit: "cover" }} 
-                />
-                <div style={{ flex: 1, fontSize: "16px", fontWeight: "600" }}>
-                  {student.name}
-                </div>
-                <div style={{ fontSize: "18px", fontWeight: "800" }}>
-                  {student.percentage || student.averageScore || 0}%
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

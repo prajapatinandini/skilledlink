@@ -3,12 +3,21 @@ import axios from "axios";
 
 const API_URL = "https://skilledlink-f4lp.onrender.com";
 
-// 🟢 Preview environment ke liye DurationBadge yahan define kiya gaya hai
-const DurationBadge = ({ daysLeft }) => (
-  <span style={{ background: "#e6f7ff", color: "#1890ff", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "bold" }}>
-    ⏳ {daysLeft} Days Left
-  </span>
-);
+// 🚀 1. UPDATE: Expired Badge Logic yahan bhi laga diya!
+const DurationBadge = ({ daysLeft }) => {
+  if (daysLeft <= 0) {
+    return (
+      <span style={{ background: "#fee2e2", color: "#dc2626", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "bold", border: "1px solid #fca5a5" }}>
+        🔴 Expired / Closed
+      </span>
+    );
+  }
+  return (
+    <span style={{ background: "#e6f7ff", color: "#1890ff", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: "bold" }}>
+      ⏳ {daysLeft} Days Left
+    </span>
+  );
+};
 
 const HiredTab = ({
   onShowModal,
@@ -24,7 +33,6 @@ const HiredTab = ({
   const [isPaying, setIsPaying] = useState(false); 
   const [showPricing, setShowPricing] = useState(false); // 👈 Modal dikhane ke liye naya state
 
-  
   const getToken = () => localStorage.getItem("token");
 
   // 🚀 PRICING PACKAGES
@@ -45,7 +53,7 @@ const HiredTab = ({
       });
       setJobs(jobRes.data.jobs || jobRes.data || []);
 
-      // 2. 🚀 THE FIX: Fetch Company Credits accurately from backend
+      // 2. Fetch Company Credits
       try {
         const creditRes = await axios.get(`${API_URL}/api/payment/credits`, {
           headers: { Authorization: `Bearer ${getToken()}` }
@@ -72,7 +80,7 @@ const HiredTab = ({
   const handlePayment = async (planAmount, planCredits) => {
     try {
       setIsPaying(true);
-      setShowPricing(false); // Payment start hote hi modal band kar do
+      setShowPricing(false); 
       
       // 1. Backend se Razorpay Order create karein
       const orderRes = await axios.post(`${API_URL}/api/payment/create-order`, 
@@ -92,20 +100,19 @@ const HiredTab = ({
         order_id: orderData.id,
         handler: async function (response) {
           try {
-            // 3. Payment Verify karein backend par
+            // 3. Payment Verify karein
             const verifyRes = await axios.post(`${API_URL}/api/payment/verify`, {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              creditsToAdd: planCredits // 👈 Dynamic credits
+              creditsToAdd: planCredits 
             }, {
               headers: { Authorization: `Bearer ${getToken()}` }
             });
 
-            // 🚀 THE FIX: Check status and update UI instantly
+            // 4. Check status and update UI
             if (verifyRes.status === 200) {
               setSuccessMsg(`Payment Successful! ${planCredits} Credits added. 🎉`);
-              // Backend se aayi latest credit value set karein
               setCompanyCredits(verifyRes.data.credits || (companyCredits + planCredits));
               setTimeout(() => setSuccessMsg(""), 4000);
             }
@@ -140,13 +147,10 @@ const HiredTab = ({
 
   // 🚀 HIRE CLICK HANDLER
   const handleHireClick = () => {
-    const postCost = 100; // Ek job post ki keemat
-    
+    const postCost = 100; 
     if (companyCredits < postCost) {
-      // 🟢 Agar paise nahi hain, toh alert ki jagah Pricing Modal kholo
       setShowPricing(true);
     } else {
-      // ✅ Agar paise hain toh Job post karne wala modal khol do
       onShowModal();
     }
   };
@@ -180,12 +184,17 @@ const HiredTab = ({
     if (onOpenHistory) onOpenHistory(job);
   };
 
-  const sortedJobs = [...jobs].sort((a, b) => (a.isPaused === b.isPaused) ? 0 : a.isPaused ? 1 : -1);
+  // 🚀 2. UPDATE: Sort logic to push expired/paused to bottom
+  const sortedJobs = [...jobs].sort((a, b) => {
+    const aIsInactive = a.isPaused || a.daysLeft <= 0;
+    const bIsInactive = b.isPaused || b.daysLeft <= 0;
+    return aIsInactive === bIsInactive ? 0 : aIsInactive ? 1 : -1;
+  });
 
   return (
     <div className="content-box posted-jobs-box" style={{ position: "relative" }}>
 
-      {/* 🚀================ PRICING MODAL (OVERLAY) ================🚀 */}
+      {/* 🚀================ PRICING MODAL ================🚀 */}
       {showPricing && (
         <div style={{
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
@@ -242,7 +251,6 @@ const HiredTab = ({
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* 💰 CREDIT DISPLAY BADGE */}
           <div style={{ 
             background: "#fff", border: "1px solid #e0d9f5", padding: "8px 15px", 
             borderRadius: "20px", fontSize: "14px", fontWeight: "bold", color: "#553f9a",
@@ -274,8 +282,10 @@ const HiredTab = ({
       ) : (
         sortedJobs.map(job => {
           const jobId = job._id || job.id;
-          const paused = job.isPaused || false; 
-          const expired = job.isExpired || false; 
+          
+          // 🚀 3. UPDATE: Expired logic (job.isExpired ko check karna zaruri nahi, daysLeft check karna safe hai)
+          const isExpired = job.daysLeft <= 0;
+          const paused = job.isPaused || isExpired; 
 
           return (
             <div
@@ -286,7 +296,7 @@ const HiredTab = ({
                 background: paused ? "#f5f5f7" : "#fff",
                 transition: "0.3s",
                 position: "relative",
-                border: expired ? "1px solid #ff4d4f" : "1px solid #eee", 
+                border: isExpired ? "1px solid #fca5a5" : "1px solid #eee", 
                 padding: "15px",
                 marginBottom: "15px",
                 borderRadius: "8px"
@@ -294,7 +304,7 @@ const HiredTab = ({
             >
               {paused && (
                 <div style={{
-                  position: "absolute", inset: 0, borderRadius: "14px",
+                  position: "absolute", inset: 0, borderRadius: "8px",
                   background: "repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(0,0,0,0.015) 8px,rgba(0,0,0,0.015) 16px)",
                   pointerEvents: "none"
                 }} />
@@ -304,19 +314,14 @@ const HiredTab = ({
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <h3 style={{ margin: 0, color: paused ? "#999" : "#553f9a" }}>{job.title}</h3>
 
-                  {expired && (
-                    <span style={{ background: "#fff1f0", color: "#cf1322", border: "1px solid #ffa39e", padding: "2px 8px", borderRadius: "12px", fontSize: "11px", fontWeight: "bold", display: "flex", alignItems: "center" }}>
-                      ⏱️ Expired
-                    </span>
-                  )}
-                  {paused && !expired && (
+                  {job.isPaused && !isExpired && (
                     <span style={{ background: "#e5e5ea", padding: "3px 10px", borderRadius: "20px", fontSize: "11px", display: "flex", alignItems: "center", color: "#666", fontWeight: "bold" }}>
                       ⏸ Paused
                     </span>
                   )}
                 </div>
 
-                {!paused && job.daysLeft !== undefined && <DurationBadge daysLeft={job.daysLeft} />}
+                {job.daysLeft !== undefined && <DurationBadge daysLeft={job.daysLeft} />}
               </div>
 
               <div className="job-meta" style={{ marginBottom: "10px", color: "#555", fontSize: "14px" }}>
@@ -372,14 +377,15 @@ const HiredTab = ({
                   onClick={() => handleTogglePause(jobId)}
                   style={{
                     padding: "8px 16px", borderRadius: "6px",
-                    background: paused ? "#553f9a" : "#f3f0ff",
-                    color: paused ? "#fff" : "#553f9a",
-                    cursor: "pointer", border: "none", fontWeight: "bold"
+                    background: job.isPaused ? "#553f9a" : "#f3f0ff",
+                    color: job.isPaused ? "#fff" : "#553f9a",
+                    cursor: isExpired ? "not-allowed" : "pointer", 
+                    border: "none", fontWeight: "bold"
                   }}
-                  disabled={expired} 
-                  title={expired ? "Job is expired. You cannot resume it." : ""}
+                  disabled={isExpired} 
+                  title={isExpired ? "Job is expired. You cannot resume it." : ""}
                 >
-                  {paused ? "▶ Resume" : "⏸ Pause"}
+                  {job.isPaused ? "▶ Resume" : "⏸ Pause"}
                 </button>
 
                 <button

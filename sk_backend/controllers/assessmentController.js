@@ -4,7 +4,6 @@ const User = require("../models/User");
 const Project = require("../models/Project");
 const { VM } = require("vm2"); 
 
-// ================= TEST START (UPDATED WITH SMART CREDIT & RETRY SYSTEM) =================
 exports.startTest = async (req, res) => {
   try {
     const { jobId } = req.params; 
@@ -20,19 +19,28 @@ exports.startTest = async (req, res) => {
     const job = await Job.findById(jobId);
     if (!job) return res.status(404).json({ message: "Job not found" });
 
+    // 🚀 THE SECURITY FIX: Block if Job is Paused or Expired 🚀
+    // Hum check kar rahe hain: Paused hai? YA Days khatam ho gaye?
+    if (job.isPaused || job.daysLeft <= 0) {
+      return res.status(403).json({ 
+        message: job.isPaused 
+          ? "This job is currently paused by the HR. Please check back later." 
+          : "This job application has expired. You can no longer start this test." 
+      });
+    }
+
     // 2. Check if attempt already exists for this specific job & student
     let attempt = await TestAttempt.findOne({ student: studentId, company: jobId });
 
     // 🟢 SCENARIO A: ATTEMPT ALREADY EXISTS 🟢
     if (attempt) {
-      // Agar test already submit ho chuka hai, toh dobara test nahi dene dena
       if (attempt.status === "completed") {
         return res.status(400).json({ 
           message: "You have already completed the assessment for this role. Retakes are not allowed." 
         });
       }
       
-      // Agar test in-progress hai (jaise tab close ho gaya tha), toh resume karwao BINA credits kaate
+      // Resume logic
       return res.status(200).json({
         message: "Resuming existing assessment. No credits deducted.",
         attemptId: attempt._id,
