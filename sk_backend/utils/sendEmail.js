@@ -1,11 +1,11 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
-// 🚀 FIXED TRANSPORTER: Port 465 use kar rahe hain jo timeout nahi deta
+// 🚀 FIXED TRANSPORTER: Port 2525 ke sath secure hamesha false hota hai
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 2525, // 🔒 Secure Port
-  secure: true, // Port 465 ke liye true hona zaroori hai
+  port: 2525, 
+  secure: false, // ✅ ISKO FALSE KARNA ZAROORI HAI
   auth: {
     user: process.env.SMTP_USER, 
     pass: process.env.SMTP_PASS, 
