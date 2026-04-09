@@ -64,8 +64,7 @@ exports.getPlacementsData = async (req, res) => {
 };
 
 // 4. TALENT POOL TAB
-// 4. TALENT POOL TAB (🚀 FIX: Added Profile Data & Image Logic)
-exports.getTalentPoolData = async (req, res) => {
+ exports.getTalentPoolData = async (req, res) => {
   try {
     const companyId = req.user._id || req.user.id;
     const jobs = await Job.find({ company: companyId }).select('_id');

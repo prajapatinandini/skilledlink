@@ -184,10 +184,7 @@ exports.getDashboardData = async (req, res) => {
   }
 };
 
-// ==========================================
-  // ACTION HANDLER (Ab ye sahi API hit karega)
-  // ==========================================
-// 👇 YEH HAI ASLI BACKEND KA CODE 👇
+// 👇 IS FUNCTION KO APNE CONTROLLER MEIN REPLACE KAR LO 👇
 exports.updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body; 
@@ -200,24 +197,29 @@ exports.updateApplicationStatus = async (req, res) => {
 
     if (!attempt) return res.status(404).json({ message: "Candidate record not found" });
 
-    // Status DB mein save kar rahe hain
+    // 1. Status DB mein save kar rahe hain (Ye pehle hona chahiye)
     attempt.status = status;
     await attempt.save();
 
-    // EMAIL BHEJNE KA ASLI LOGIC
+    // 2. EMAIL BHEJNE KA LOGIC
     if (status === "Hired" || status === "Rejected") {
       const companyName = attempt.company?.companyName || attempt.company?.title || "Our Company"; 
       
-      console.log("-----------------------------------------");
-      console.log(`👉 sending email to this ID: ${attempt.student.email}`);
+      console.log(`👉 Sending background email to: ${attempt.student.email}`);
       
-      await sendStatusEmail(attempt.student.email, attempt.student.name, status, companyName);
+      // 🚀 FIX: Yahan se 'await' hata diya hai! 
+      // Ab ye line background mein chalegi aur server response turant bhej dega.
+      sendStatusEmail(attempt.student.email, attempt.student.name, status, companyName);
     }
 
-    res.status(200).json({ success: true, message: `Email 100% sent to ${attempt.student.email}! 📧` });
+    // 3. Response turant bhej rahe hain
+    res.status(200).json({ 
+      success: true, 
+      message: `Status updated to ${status}! Email process started in background. 📧` 
+    });
 
   } catch (err) {
     console.error("❌ Status Update Error:", err);
-    res.status(500).json({ error: "DB update ho gaya par Email FAIL ho gaya!" });
+    res.status(500).json({ error: "Something went wrong on the server!" });
   }
 };
