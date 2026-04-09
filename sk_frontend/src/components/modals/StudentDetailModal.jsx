@@ -13,7 +13,6 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
   const [profileData, setProfileData] = useState(null); 
   const [loadingProjects, setLoadingProjects] = useState(false);
 
-  
   const getToken = () => localStorage.getItem("token");
 
   // 1. DATA MAPPING
@@ -60,14 +59,14 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
         setLoadingProjects(true);
         const token = getToken();
 
-        // 1. Fetch Projects & Evaluation (Yahan 'Attempt ID' lagta hai jo ki applicant.id hai)
+        // 1. Fetch Projects & Evaluation
         const projRes = await axios.get(`${API_URL}/api/dashboard/projects/${applicant.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setProjects(projRes.data.projects || []);
         setEvaluation(projRes.data.evaluation || { score: 0 });
 
-        // 🟢 2. Fetch Full Profile (YAHAN FIX KIYA HAI: Ab 'Student ID' nikal kar bhejenge)
+        // 2. Fetch Full Profile
         const studentId = applicant.rawAttemptData?.student?._id || applicant.rawAttemptData?.student;
 
         if (studentId) {
@@ -90,12 +89,11 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
   }, [applicant.id, applicant.rawAttemptData]);
 
   // ==========================================
-  // 🚀 ACTION HANDLER (Ab seedha EMAIL wale route pe jayega)
+  // 🚀 ACTION HANDLER
   // ==========================================
   const handleUpdateStatus = async (newStatus) => {
     try {
       setLoadingAction(true);
-      // 🔥 Yahan '/dashboard/attempt' ki jagah '/application' aayega 🔥
       await axios.patch(`${API_URL}/api/application/${applicant.id}/status`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${getToken()}` }
       });
@@ -108,6 +106,18 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
       setLoadingAction(false);
     }
   };
+
+  // 🚀 1. PHOTO FIX LOGIC
+  const rawImg = profileData?.profilePhoto || studentDbData?.profilePhoto || studentDbData?.img || applicant?.img;
+  const finalImg = rawImg 
+    ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name || "Student")}&background=f3f0ff&color=553f9a&bold=true`;
+
+  // 🚀 2. RESUME FIX LOGIC
+  const rawResume = profileData?.resumeUrl || studentDbData?.resumeUrl || applicant?.resumeUrl;
+  const finalResume = rawResume && rawResume !== "N/A"
+    ? (String(rawResume).startsWith('http') ? rawResume : `${API_URL}${rawResume}`)
+    : null;
 
   return (
     <div
@@ -194,7 +204,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
             marginBottom: "28px"
           }}>
             <img
-              src={applicant.img || "/default.png"}
+              src={finalImg}
               alt={applicant.name}
               style={{
                 width: "82px",
@@ -204,6 +214,7 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
                 border: "3px solid rgba(255,255,255,0.45)",
                 flexShrink: 0
               }}
+              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(applicant.name || "Student")}&background=e2e8f0&color=475569`; }}
             />
             <div style={{ flex: 1 }}>
               <div style={{
@@ -232,6 +243,34 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
                 }}>
                   {applicant.status || "Pending"}
                 </span>
+
+                {/* 🚀 QUICK RESUME BUTTON ADDED HERE 🚀 */}
+                {finalResume && (
+                  <a 
+                    href={finalResume}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      marginLeft: "auto",
+                      background: "rgba(255,255,255,0.2)",
+                      color: "#fff",
+                      padding: "6px 14px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      fontWeight: "700",
+                      textDecoration: "none",
+                      border: "1px solid rgba(255,255,255,0.4)",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      transition: "0.2s"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.3)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.2)"}
+                  >
+                    📄 Download Resume
+                  </a>
+                )}
               </div>
               <div style={{
                 display: "grid",

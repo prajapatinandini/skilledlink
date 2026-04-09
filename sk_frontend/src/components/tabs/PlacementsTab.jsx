@@ -5,8 +5,7 @@ const PlacementsTab = () => {
   const [placements, setPlacements] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  
-const API_URL = "https://skilledlink-f4lp.onrender.com";
+  const API_URL = "https://skilledlink-f4lp.onrender.com";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -25,7 +24,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
         
         const rawPlacements = res.data || [];
 
-        // 2. Fetch full profile data for each placed student to remove "N/A"
+        // 2. Fetch full profile data for each placed student
         const placementsWithProfiles = await Promise.all(
           rawPlacements.map(async (p) => {
             const studentId = p.student?._id || p.student;
@@ -48,11 +47,23 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
             const finalDegree = profileData.degree && profileData.degree !== "N/A" ? profileData.degree : (st.degree || "Degree not specified");
             const finalName = st.name || "Unknown Applicant";
 
+            // 🚀 1. SMART PHOTO FIX
+            const rawImg = profileData.profilePhoto || st.profilePhoto || st.img;
+            const finalImg = rawImg 
+              ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
+              : `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=f3f0ff&color=553f9a&bold=true`;
+
+            // 🚀 2. SMART RESUME FIX
+            const rawResume = profileData.resumeUrl || st.resumeUrl;
+            const finalResume = rawResume && rawResume !== "N/A"
+              ? (String(rawResume).startsWith('http') ? rawResume : `${API_URL}${rawResume}`)
+              : null;
+
             return {
               id: studentId,
               name: finalName,
-              // 🟢 SMART AVATAR: Agar photo nahi hai ya URL invalid hai toh initials wala avatar
-              img: st.img ? st.img : `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=f3f0ff&color=553f9a&bold=true`,
+              img: finalImg,
+              resumeUrl: finalResume, // 🟢 Resume URL object mein save kar liya
               college: finalCollege,
               degree: finalDegree,
               date: new Date(p.updatedAt || p.createdAt).toLocaleDateString('en-GB'),
@@ -150,7 +161,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                       src={s.img}
                       alt={s.name}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      // Ek aur layer security ki. Agar avatar service down ho toh fallback default le le.
                       onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=e2e8f0&color=475569`; }}
                     />
                   </div>
@@ -187,18 +197,35 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
               {/* 🟢 JOB ROLE BANNER */}
               <div style={{
                 background: "#f8faff", borderLeft: "4px solid #553f9a", borderRadius: "8px",
-                padding: "12px 15px", marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px"
+                padding: "12px 15px", marginBottom: "15px", display: "flex", alignItems: "center", gap: "10px"
               }}>
                 <span style={{ fontSize: "18px" }}>💼</span>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: "11px", color: "#64748b", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "2px" }}>Selected For</div>
                   <div style={{ fontSize: "15px", fontWeight: "800", color: "#553f9a", textTransform: "capitalize" }}>{s.jobTitle}</div>
                 </div>
+                
+                {/* 🚀 RESUME DOWNLOAD BUTTON HERE 🚀 */}
+                {s.resumeUrl && (
+                  <a 
+                    href={s.resumeUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      background: "#ffffff", color: "#553f9a", border: "1px solid #d8d0f5",
+                      padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "700",
+                      textDecoration: "none", display: "flex", alignItems: "center", gap: "5px",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.02)"
+                    }}
+                  >
+                    📄 Resume
+                  </a>
+                )}
               </div>
 
               {/* 🟢 SCORE CARDS ROW */}
               <div style={{
-                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "15px"
+                display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px"
               }}>
                 {/* Score Function */}
                 {[

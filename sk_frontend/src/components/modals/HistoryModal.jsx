@@ -16,8 +16,6 @@ const HistoryModal = ({
   const [histData, setHistData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  
-
   // ==========================================
   // 🟢 FETCH DATA API
   // ==========================================
@@ -42,11 +40,26 @@ const HistoryModal = ({
           const safeCodingScore = attempt.codingPercentage || 
             (attempt.codingTotalMarks > 0 ? (attempt.codingObtainedMarks / attempt.codingTotalMarks) * 100 : 0);
 
+          const finalName = attempt.student?.name || "Unknown Applicant";
+
+          // 🚀 1. SMART PHOTO FIX
+          const rawImg = attempt.student?.profilePhoto || attempt.student?.img;
+          const finalImg = rawImg 
+            ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=f3f0ff&color=553f9a&bold=true`;
+
+          // 🚀 2. QUICK RESUME FIX
+          const rawResume = attempt.student?.resumeUrl;
+          const finalResume = rawResume && rawResume !== "N/A"
+            ? (String(rawResume).startsWith('http') ? rawResume : `${API_URL}${rawResume}`)
+            : null;
+
           return {
             id: attempt._id,
-            name: attempt.student?.name || "Unknown Applicant",
+            name: finalName,
             email: attempt.student?.email || "No Email",
-            img: attempt.student?.img || "/default.png",
+            img: finalImg,
+            resumeUrl: finalResume, // Resume link save kar liya
             status: currentStatus,
             date: new Date(attempt.createdAt).toLocaleDateString('en-GB'),
             quiz: Math.round(attempt.aptitudeScore || 0),
@@ -72,20 +85,18 @@ const HistoryModal = ({
   }, [historyJob]);
 
   // ==========================================
-  // 🚀 NAYA FUNCTION: STATUS UPDATE & EMAIL TRIGGER
+  // 🚀 STATUS UPDATE & EMAIL TRIGGER
   // ==========================================
   const handleStatusChange = async (attemptId, newStatus) => {
     try {
       const token = localStorage.getItem("token");
       
-      // Backend api hit karega jahan email bhejte hain
       const res = await axios.patch(
-        `${API_URL}/api/application/${attemptId}/status`, // 👈 Backend route
+        `${API_URL}/api/application/${attemptId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // UI update taaki turant naya status dikhe (Bina refresh kiye)
       setHistData(prevData => 
         prevData.map(item => 
           item.id === attemptId ? { ...item, status: newStatus } : item
@@ -99,7 +110,6 @@ const HistoryModal = ({
     }
   };
 
-  // Filtering logic
   const filtered = historyFilter === "All"
     ? histData
     : histData.filter(a => a.status === historyFilter);
@@ -149,17 +159,22 @@ const HistoryModal = ({
                 className="history-row history-row-clickable"
                 onClick={() => onSelectApplicant(a)} 
               >
-                <img src={a.img} alt={a.name} className="history-avatar" />
+                <img 
+                  src={a.img} 
+                  alt={a.name} 
+                  className="history-avatar"
+                  onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&background=f3f0ff&color=553f9a&bold=true`; }}
+                />
+                
                 <div className="history-info" style={{ flex: 1 }}>
                   
-                  {/* 🟢 DROPDOWN YAHAN ADD KIYA HAI */}
-                  <div className="history-name-row" style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                  {/* 🟢 NAME AND DROPDOWN */}
+                  <div className="history-name-row" style={{ display: "flex", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
                     <span className="history-name">{a.name}</span>
                     
                     <select
                       className={`history-status ${STATUS_CLS[a.status] || "status-pending"}`}
                       value={a.status}
-                      // stopPropagation zaroori hai taaki select dabane par modal na khul jaye
                       onClick={(e) => e.stopPropagation()} 
                       onChange={(e) => {
                         e.stopPropagation();
@@ -176,6 +191,22 @@ const HistoryModal = ({
                       <option value="Rejected">Rejected</option>
                     </select>
 
+                    {/* 🚀 QUICK RESUME BUTTON (Direct Download) */}
+                    {a.resumeUrl && (
+                      <a 
+                        href={a.resumeUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()} // Taaki row click trigger na ho
+                        style={{
+                          background: "#f3f0ff", color: "#553f9a", border: "1px solid #d8d0f5",
+                          padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "bold",
+                          textDecoration: "none", display: "flex", alignItems: "center", gap: "5px"
+                        }}
+                      >
+                        📄 Resume
+                      </a>
+                    )}
                   </div>
 
                   <span className="history-date">Applied: {a.date}</span>

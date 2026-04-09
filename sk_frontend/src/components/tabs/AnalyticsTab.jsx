@@ -8,8 +8,7 @@ const AnalyticsTab = () => {
   const P = "#553f9a";
   const PL = "#8573cc";
 
- 
-const API_URL = "https://skilledlink-f4lp.onrender.com";
+  const API_URL = "https://skilledlink-f4lp.onrender.com";
   const getToken = () => localStorage.getItem("token");
 
   // ==========================================
@@ -19,7 +18,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
     const fetchAnalytics = async () => {
       try {
         setLoading(true);
-        // 🛠️ Updated to match dashboard routes. Assuming '/dashboard/analytics'
         const res = await axios.get(`${API_URL}/api/dashboard/analytics`, {
           headers: { Authorization: `Bearer ${getToken()}` }
         });
@@ -41,19 +39,22 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
             currentStatus = "In Review";
           }
           
-          // Naya logic naam aur photo ke liye
           const finalName = a.student?.name || "Unknown Applicant";
+
+          // 🚀 PHOTO LOGIC FIX: Check for profilePhoto and append API_URL if needed
+          const rawImg = a.student?.profilePhoto || a.student?.img;
+          const finalImg = rawImg 
+            ? (String(rawImg).startsWith('http') ? rawImg : `${API_URL}${rawImg}`) 
+            : `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=f3f0ff&color=553f9a&bold=true`;
 
           return {
             id: a._id || a.id,
-            jid: a.company || a.jobId, // Ensure this matches how Job ID is stored in TestAttempt
+            jid: a.company || a.jobId, 
             name: finalName,
-            // 🟢 UPDATE 1: Image me smart fallback avatar add kar diya (design bina chhede)
-            img: a.student?.img || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=f3f0ff&color=553f9a&bold=true`,
+            img: finalImg,
             status: currentStatus,
             quiz: a.aptitudeScore || 0,
             coding: a.codingPercentage || 0,
-            // 🟢 UPDATE 2: Project score add kiya taki average 27 nikal sake
             project: a.projectScore || 0
           };
         });
@@ -104,7 +105,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
   const scorerMap = {};
   allApps.forEach(a => {
     if (!scorerMap[a.name]) scorerMap[a.name] = { name: a.name, img: a.img, total: 0, count: 0 };
-    // 🟢 UPDATE 3: Score divide by 3 kiya (Quiz + Coding + Project), taaki 17% ki jagah 27% aaye
     scorerMap[a.name].total += (a.quiz + a.coding + a.project) / 3;
     scorerMap[a.name].count += 1;
   });
@@ -117,7 +117,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
   // Score buckets
   const buckets = { "90–100": 0, "80–89": 0, "70–79": 0, "60–69": 0, "<60": 0 };
   allApps.forEach(a => {
-    // 🟢 UPDATE 4: Buckets me bhi 3 se divide kiya taaki graph sahi bar bane
     const avg = (a.quiz + a.coding + a.project) / 3;
     if (avg >= 90) buckets["90–100"]++;
     else if (avg >= 80) buckets["80–89"]++;
@@ -305,7 +304,6 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                 </div>
               ))}
             </div>
-            {/* 🟢 UPDATE 5: Text change kiya taki users ko pta rahe project score bhi include hai */}
             <p style={{ margin: "14px 0 0", fontSize: "12px", color: "#bbb", textAlign: "center" }}>
               Based on average (project + quiz + coding) scores
             </p>
@@ -436,7 +434,7 @@ const API_URL = "https://skilledlink-f4lp.onrender.com";
                     border: "2px solid #e0d9f5",
                     flexShrink: 0
                   }}
-                  // 🟢 EK AUR FALLBACK: Incase image link broken ho, UI crash na kare
+                  // Ek chhota sa fallback, in case server se image ud jaye
                   onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=f3f0ff&color=553f9a&bold=true`; }}
                 />
                 <div style={{ flex: 1 }}>
