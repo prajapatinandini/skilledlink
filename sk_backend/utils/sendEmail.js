@@ -1,18 +1,17 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
-// 🚀 Optimized Transporter (Pooling removed for stability on Render)
+// 🚀 FIXED TRANSPORTER: Port 465 use kar rahe hain jo timeout nahi deta
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
-  port: 587,
-  secure: false, // 587 ke liye false hi rahega
+  port: 465, // 🔒 Secure Port
+  secure: true, // Port 465 ke liye true hona zaroori hai
   auth: {
     user: process.env.SMTP_USER, 
     pass: process.env.SMTP_PASS, 
   },
-  // ⏱️ Timeout settings badha di hain
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,
+  // Timeout settings for safety
+  connectionTimeout: 10000, 
   socketTimeout: 15000,
   tls: {
     rejectUnauthorized: false
@@ -43,19 +42,24 @@ const sendStatusEmail = async (to, studentName, status, companyName) => {
 
     if (currentStatus === "hired") {
       subject = `Congratulations! You are shortlisted at ${companyName} 🎉`;
-      htmlContent = `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #2d1f6e;">Hello ${studentName},</h2>
-          <p>You have been <strong>SELECTED</strong> for the position at <strong>${companyName}</strong>.</p>
-          <p>The HR team will contact you shortly.</p>
-          <p>Best Regards,<br>SkilledLink Team</p>
-      </div>`;
+      htmlContent = `
+        <div style="font-family: sans-serif; padding: 25px; color: #333; border: 1px solid #e5e7eb; border-radius: 12px; max-width: 600px; margin: auto;">
+            <h2 style="color: #2d1f6e;">Hello ${studentName},</h2>
+            <p>You have been successfully <strong>SELECTED</strong> for the position at <strong>${companyName}</strong>.</p>
+            <p>Our team will contact you shortly.</p>
+            <br/>
+            <p>Best Regards,<br/><strong>SkilledLink Team</strong></p>
+        </div>`;
     } else if (currentStatus === "rejected") {
       subject = `Update on your application at ${companyName}`;
-      htmlContent = `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-          <h2 style="color: #2d1f6e;">Hello ${studentName},</h2>
-          <p>We regret to inform you that we are not moving forward with your application at <strong>${companyName}</strong>.</p>
-          <p>Best Regards,<br>SkilledLink Team</p>
-      </div>`;
+      htmlContent = `
+        <div style="font-family: sans-serif; padding: 25px; color: #333; border: 1px solid #e5e7eb; border-radius: 12px; max-width: 600px; margin: auto;">
+            <h2 style="color: #2d1f6e;">Hello ${studentName},</h2>
+            <p>After careful consideration, we regret to inform you that we are not moving forward with your application at <strong>${companyName}</strong>.</p>
+            <p>We wish you the best for your future.</p>
+            <br/>
+            <p>Best Regards,<br/><strong>SkilledLink Team</strong></p>
+        </div>`;
     } else { return; }
 
     await transporter.sendMail({
