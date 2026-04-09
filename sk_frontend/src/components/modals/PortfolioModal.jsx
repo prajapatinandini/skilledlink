@@ -94,26 +94,25 @@ const PortfolioModal = ({ student, onClose }) => {
 
           <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
             
-            {/* 🚀 1. YAHAN HAI PHOTO KA BULLETPROOF LOGIC 🚀 */}
-            <img
-              src={
-                (p?.profilePhoto || student?.img) 
-                  ? (String(p.profilePhoto || student.img).startsWith('http') 
-                      ? (p.profilePhoto || student.img) 
-                      : `${API_URL}${p.profilePhoto || student.img}`) 
-                  : "/default.png"
-              }
-              alt={student?.name || "Candidate"}
-              style={{
-                width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover",
-                border: "3px solid rgba(255,255,255,0.5)", flexShrink: 0, boxShadow: "0 4px 16px rgba(0,0,0,0.2)"
-              }}
-              onError={(e) => { 
-                e.target.onerror = null; 
-                const fallbackName = student?.name ? encodeURIComponent(student.name) : "Student";
-                e.target.src = `https://ui-avatars.com/api/?name=${fallbackName}&background=random&color=fff`; 
-              }}
-            />
+            {/* 🚀 1. ORIGINAL PHOTO LOGIC (AVATAR REMOVED) 🚀 */}
+            {(() => {
+              const photoUrl = p?.profilePhoto || student?.profilePhoto || student?.img;
+              const finalSrc = photoUrl 
+                ? (String(photoUrl).startsWith('http') ? photoUrl : `${API_URL}${photoUrl}`) 
+                : "/default.png";
+
+              return (
+                <img
+                  src={finalSrc}
+                  alt={student?.name || "Candidate Profile"}
+                  style={{
+                    width: "90px", height: "90px", borderRadius: "50%", objectFit: "cover",
+                    border: "3px solid rgba(255,255,255,0.5)", flexShrink: 0, 
+                    boxShadow: "0 4px 16px rgba(0,0,0,0.2)", background: "#f3f0ff"
+                  }}
+                />
+              );
+            })()}
 
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "6px" }}>
@@ -154,24 +153,31 @@ const PortfolioModal = ({ student, onClose }) => {
             ))}
           </div>
 
-          {/* 🚀 2. YAHAN HAI RESUME DOWNLOAD BUTTON 🚀 */}
-          {p.resumeUrl && p.resumeUrl !== "N/A" && (
-            <div style={{ marginTop: "20px" }}>
-              <a 
-                href={`${API_URL}${p.resumeUrl}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.25)",
-                  color: "#fff", padding: "8px 16px", borderRadius: "10px", textDecoration: "none",
-                  fontSize: "13px", fontWeight: "bold", border: "1px solid rgba(255,255,255,0.4)",
-                  transition: "0.2s"
-                }}
-              >
-                📄 Download Resume
-              </a>
-            </div>
-          )}
+          {/* 🚀 2. ROBUST RESUME DOWNLOAD BUTTON 🚀 */}
+          {(() => {
+            const resumeLink = p?.resumeUrl || student?.resumeUrl || p?.user?.resumeUrl;
+            if (!resumeLink || resumeLink === "N/A") return null;
+
+            const finalResumeSrc = String(resumeLink).startsWith('http') ? resumeLink : `${API_URL}${resumeLink}`;
+
+            return (
+              <div style={{ marginTop: "20px" }}>
+                <a 
+                  href={finalResumeSrc}
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "inline-flex", alignItems: "center", gap: "8px", background: "rgba(255,255,255,0.25)",
+                    color: "#fff", padding: "8px 16px", borderRadius: "10px", textDecoration: "none",
+                    fontSize: "13px", fontWeight: "bold", border: "1px solid rgba(255,255,255,0.4)",
+                    transition: "0.2s"
+                  }}
+                >
+                  📄 Download Resume
+                </a>
+              </div>
+            );
+          })()}
         </div>
 
         {/* BODY */}
