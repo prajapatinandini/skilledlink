@@ -1,16 +1,16 @@
 require("dotenv").config();
 const nodemailer = require("nodemailer");
 
-// 🚀 FIXED TRANSPORTER: Port 2525 ke sath secure hamesha false hota hai
+
 const transporter = nodemailer.createTransport({
   host: "smtp-relay.brevo.com",
   port: 2525, 
-  secure: false, // ✅ ISKO FALSE KARNA ZAROORI HAI
+  secure: false, 
   auth: {
     user: process.env.SMTP_USER, 
     pass: process.env.SMTP_PASS, 
   },
-  // Timeout settings for safety
+  
   connectionTimeout: 10000, 
   socketTimeout: 15000,
   tls: {
