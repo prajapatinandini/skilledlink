@@ -23,7 +23,7 @@ import CompanyProfileCreate from "./pages/CompanyProfileCreate";
 // Dashboards
 import Dashboard from "./pages/Dashboard"; // (if still needed for student/general)
 import CompanyDashboard from "./CompanyDashboard"; // (your main dashboard)
-
+import SystemCheck from "./SystemCheck";
 function App() {
   return (
     <BrowserRouter>
@@ -45,7 +45,7 @@ function App() {
         <Route path="/student/profile" element={<StudentProfile />} />
         <Route path="/quiz" element={<Quiz />} />
         <Route path="/assessment/:testId" element={<Assessement />} /> 
-
+<Route path="/system-check/:testId" element={<SystemCheck />} />
         {/* Company Flow */}
         <Route path="/company/create-profile" element={<CompanyProfileCreate />} />
         <Route path="/company/dashboard" element={<CompanyDashboard />} />  

@@ -385,20 +385,26 @@ exports.submitProjects = async (req, res) => {
 
     const { projects } = req.body; 
     const projectIds = [];
+    const jobId = attempt.company; // 👈 Attempt se Job ID nikal li
 
     if (projects && projects.length > 0) {
       for (let p of projects) {
         if (p.url && p.url.trim() !== "") {
-          // 🚀 SMART FIX: Check karo ki kya is user ne ye URL pehle save kiya hai?
-          let existingProj = await Project.findOne({ userId: attempt.student, repoUrl: p.url });
+          
+          // 🚀 FIND: User + Job + URL teeno match karne chahiye
+          let existingProj = await Project.findOne({ 
+             userId: attempt.student, 
+             jobId: jobId, 
+             repoUrl: p.url 
+          });
           
           if (existingProj) {
-            // Agar pehle se hai, toh direct uski ID use kar lo (No Duplicate Error)
             projectIds.push(existingProj._id);
           } else {
-            // Agar naya hai, toh create karo
+            // 🚀 CREATE: Naya project banate waqt jobId bhi save karo
             const newProj = await Project.create({
-              userId: attempt.student, 
+              userId: attempt.student,
+              jobId: jobId, 
               title: p.title || "Assessment Project",
               repoUrl: p.url, 
             });
@@ -410,6 +416,7 @@ exports.submitProjects = async (req, res) => {
 
     res.json({ message: "Projects saved successfully", projectIds });
   } catch (err) {
+    console.error("Project Submit Error:", err);
     res.status(500).json({ error: err.message });
   }
 };
