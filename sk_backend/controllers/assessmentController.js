@@ -243,6 +243,7 @@ exports.getCodingQuestions = async (req, res) => {
   }
 };
 
+
 // ================= CODING SUBMIT =================
 exports.submitCoding = async (req, res) => {
   try {
@@ -251,17 +252,17 @@ exports.submitCoding = async (req, res) => {
     if (!attempt) return res.status(404).json({ message: "Attempt not found" });
     
     const job = await Job.findById(attempt.company);
+    
+    // 🚀 FIX 1: Prevent crash if Job is missing
+    if (!job) return res.status(404).json({ message: "Job not found in database" });
 
     let obtainedMarks = 0;
-    let totalMarks = 0;
+    let totalMarks = 0; 
     const processedCoding = [];
     let globalDebugLogs = []; 
 
-    if (job.coding && job.coding.length > 0) {
-      job.coding.forEach(q => { totalMarks += (q.marks || 10); });
-    }
-
-    if (!codingAnswers || codingAnswers.length === 0) {
+    // 🚀 FIX 2: Safe array check to prevent loop crashes
+    if (!codingAnswers || !Array.isArray(codingAnswers) || codingAnswers.length === 0) {
         return res.json({ message: "codingAnswers is missing or empty!" });
     }
 
@@ -273,11 +274,16 @@ exports.submitCoding = async (req, res) => {
       }
 
       const qMarks = question.marks || 10;
+      
+      // 🚀 FIX 3: Sirf unhi questions ke marks jodo jo student ko assign hue the
+      totalMarks += qMarks; 
+
       let passed = 0;
       let questionLogs = [];
 
       if (question.testCases && question.testCases.length > 0) {
         for (let t of question.testCases) {
+          // Note: Ensure you have run `npm install vm2` and required it at the top!
           const vm = new VM({ timeout: 1500, sandbox: {} });
 
           try {
@@ -323,6 +329,7 @@ exports.submitCoding = async (req, res) => {
       });
     }
 
+    // Safe percentage calculation
     const percentage = totalMarks > 0 ? (obtainedMarks / totalMarks) * 100 : 0;
     
     attempt.codingAnswers = processedCoding;

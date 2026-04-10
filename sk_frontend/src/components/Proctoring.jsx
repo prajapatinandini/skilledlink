@@ -82,22 +82,30 @@ const Proctoring = ({ onCheatWarning, maxWarnings = 3 }) => {
 
   // ================= 2. TAB SWITCH DETECTION (CENTRALIZED) =================
   useEffect(() => {
-    // 🚀 FIX: Tab switch tab tak track mat karo jab tak Camera on hoke Ready na ho jaye
+    // Agar Camera/Mic abhi tak load nahi hue, toh kuch mat karo
     if (!isReady) return;
 
+    let isListenerActive = false; // 👈 Naya Buffer State
+
     const handleVisibilityChange = () => {
-      if (document.hidden) {
-        // Agar grace period nahi chal raha tabhi warning do
-        if (!isGracePeriodRef.current) {
-          handleViolation("Tab Switched or Minimized");
-        }
+      // 🚀 The Magic Fix: Agar listener active hai aur tab hide hua, tabhi warning do!
+      if (document.hidden && !isGracePeriodRef.current && isListenerActive) {
+        handleViolation("Tab Switched or Minimized");
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [isReady]);
+    // ⏳ Camera allow hone ke exactly 2 second baad Tab-Tracking chalu hogi
+    const timer = setTimeout(() => {
+      isListenerActive = true;
+    }, 2000);
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isReady]);
 
   // ================= 3. ADVANCED AI DETECTION INTERVAL =================
   const startDetection = () => {
