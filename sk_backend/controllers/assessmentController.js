@@ -34,11 +34,11 @@ exports.startTest = async (req, res) => {
 
     // 🟢 SCENARIO A: ATTEMPT ALREADY EXISTS 🟢
     if (attempt) {
-      if (attempt.status === "completed") {
-        return res.status(400).json({ 
-          message: "You have already completed the assessment for this role. Retakes are not allowed." 
-        });
-      }
+  if (attempt.status === "completed") {
+    return res.status(400).json({ 
+      message: "You have already completed the assessment for this role. Retakes are not allowed." 
+    });
+  }
       
       // Resume logic
       return res.status(200).json({
@@ -206,16 +206,38 @@ exports.getCodingQuestions = async (req, res) => {
       return res.status(404).json({ message: "No coding questions found" });
     }
 
-    const questions = job.coding.map(c => ({
+    // 🚀 SMART CODING RANDOMIZATION: Bucketing by Difficulty
+    let hard = job.coding.filter(c => c.difficulty === 'Hard').sort(() => Math.random() - 0.5);
+    let medium = job.coding.filter(c => c.difficulty === 'Medium').sort(() => Math.random() - 0.5);
+    let easy = job.coding.filter(c => c.difficulty === 'Easy').sort(() => Math.random() - 0.5);
+
+    let selectedQuestions = [];
+
+    // 1. Ek-ek question teeno category se uthao
+    if (hard.length) selectedQuestions.push(hard.pop());
+    if (medium.length) selectedQuestions.push(medium.pop());
+    if (easy.length) selectedQuestions.push(easy.pop());
+
+    // 2. Agar koi category khali thi aur abhi 3 questions pure nahi hue hain
+    // Toh baaki bache hue questions mein se random utha kar fill kar do (Fallback Logic)
+    const remainingQuestions = [...medium, ...easy, ...hard].sort(() => Math.random() - 0.5);
+    
+    while (selectedQuestions.length < 3 && remainingQuestions.length > 0) {
+      selectedQuestions.push(remainingQuestions.shift());
+    }
+
+    // Frontend ko bhejne ke liye format karo (Test cases mat bhejna yahan!)
+    const formattedData = selectedQuestions.map(c => ({
       _id: c._id,
       title: c.title,
       description: c.description,
       sampleInput: c.sampleInput,
       sampleOutput: c.sampleOutput,
+      difficulty: c.difficulty,
       defaultCode: `function solution(input) {\n  // Write your code here\n  \n}`
     }));
 
-    res.json(questions);
+    res.json(formattedData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -360,12 +382,21 @@ exports.submitProjects = async (req, res) => {
     if (projects && projects.length > 0) {
       for (let p of projects) {
         if (p.url && p.url.trim() !== "") {
-          const newProj = await Project.create({
-            userId: attempt.student, 
-            title: p.title || "Assessment Project",
-            repoUrl: p.url, 
-          });
-          projectIds.push(newProj._id);
+          // 🚀 SMART FIX: Check karo ki kya is user ne ye URL pehle save kiya hai?
+          let existingProj = await Project.findOne({ userId: attempt.student, repoUrl: p.url });
+          
+          if (existingProj) {
+            // Agar pehle se hai, toh direct uski ID use kar lo (No Duplicate Error)
+            projectIds.push(existingProj._id);
+          } else {
+            // Agar naya hai, toh create karo
+            const newProj = await Project.create({
+              userId: attempt.student, 
+              title: p.title || "Assessment Project",
+              repoUrl: p.url, 
+            });
+            projectIds.push(newProj._id);
+          }
         }
       }
     }
@@ -375,7 +406,6 @@ exports.submitProjects = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 // ================= SAVE PROJECTS FROM ASSESSMENT =================
 exports.saveAssessmentProjects = async (req, res) => {
   try {
