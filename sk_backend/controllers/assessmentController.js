@@ -92,6 +92,7 @@ exports.startTest = async (req, res) => {
   }
 };
 
+
 // ================= APTITUDE QUESTIONS GET =================
 exports.getAptitudeQuestions = async (req, res) => {
   try {
@@ -104,18 +105,34 @@ exports.getAptitudeQuestions = async (req, res) => {
       return res.status(404).json({ message: "No aptitude questions found for this job" });
     }
 
-    const questions = job.quiz.map(q => ({
-      _id: q._id,
-      question: q.question,
-      options: q.options,
-      marks: q.marks || 1
-    }));
+    // 🚀 ANTI-CHEAT LOGIC START 🚀
+
+    // 1. Saare questions ko randomly mix (shuffle) kar do
+    const shuffledQuizBank = job.quiz.sort(() => Math.random() - 0.5);
+
+    // 2. Unme se sirf 20 questions uthao (agar 20 se kam hain toh saare utha lega)
+    const MAX_QUESTIONS = 20;
+    const selectedQuestions = shuffledQuizBank.slice(0, MAX_QUESTIONS);
+
+    // 3. Ab har question ke 'options' ko bhi mix (shuffle) kar do
+    const questions = selectedQuestions.map(q => {
+      // Options ki copy banayi aur shuffle kiya
+      let shuffledOptions = [...q.options].sort(() => Math.random() - 0.5);
+
+      return {
+        _id: q._id,
+        question: q.question,
+        options: shuffledOptions,
+        marks: q.marks || 1
+      };
+    });
 
     res.json({ questions });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 // ================= APTITUDE SUBMIT =================
 exports.submitAptitude = async (req, res) => {
@@ -129,7 +146,6 @@ exports.submitAptitude = async (req, res) => {
     const job = await Job.findById(attempt.company);
     let score = 0;
     
-    // 🟢 NAYA CODE: Answers ko database mein save karne ke liye array banaya
     const processedAnswers = []; 
     
     for (const [qId, selectedOpt] of Object.entries(answers)) {
@@ -142,15 +158,12 @@ exports.submitAptitude = async (req, res) => {
           score += (question.marks || 1); 
         }
 
-        // Frontend ko jo index chahiye (correct aur chosen answer ka), wo nikal rahe hain
         let correctIdx = question.options.findIndex(opt => opt == question.correctAnswer);
         let chosenIdx = question.options.findIndex(opt => opt == selectedOpt);
 
-        // Fallback incase index directly answer me passed hai
         if (correctIdx === -1 && !isNaN(question.correctAnswer)) correctIdx = Number(question.correctAnswer);
         if (chosenIdx === -1 && !isNaN(selectedOpt)) chosenIdx = Number(selectedOpt);
 
-        // Array me push kar rahe hain
         processedAnswers.push({
           questionId: qId,
           questionText: question.question || "Question text missing",
@@ -162,13 +175,16 @@ exports.submitAptitude = async (req, res) => {
       }
     }
 
-    const totalQuestions = job.quiz.length;
-    const percentage = totalQuestions > 0 ? (score / totalQuestions) * 100 : 0;
+    // 🚀 FIX: Calculate percentage based on 20 questions (or total if less than 20)
+    const MAX_QUESTIONS = 20;
+    const totalQuestionsAsked = Math.min(MAX_QUESTIONS, job.quiz.length);
+    
+    // Total marks assumes 1 mark per question. If varying, you'd calculate dynamically.
+    const percentage = totalQuestionsAsked > 0 ? (score / totalQuestionsAsked) * 100 : 0;
 
     attempt.aptitudeScore = percentage;
     attempt.aptitudeCleared = percentage >= 40; 
     
-    // 🟢 NAYA CODE: Yahan attempt document mein array save ho raha hai!
     attempt.aptitudeAnswers = processedAnswers; 
     
     await attempt.save();

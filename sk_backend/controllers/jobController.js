@@ -3,22 +3,31 @@ const Application = require("../models/Application");
 const User = require("../models/User"); 
 const CompanyProfile = require("../models/CompanyProfile");
 
+// ==========================================
+// 1️⃣ GET ALL JOBS (🚀 OPTIMIZED: No N+1 Query Problem)
+// ==========================================
 exports.getAllJobs = async (req, res) => {
   try {
     // 1. Saari active jobs layein
     const jobs = await Job.find({ isPaused: false }).lean().sort({ createdAt: -1 });
 
-    // 2. Har job ke liye Company ka naam aur baaki details dhundhein
-    for (let i = 0; i < jobs.length; i++) {
-      // Safety Check: Agar job mein company ki ID hi missing hai
-      if (!jobs[i].company) {
-         jobs[i].company = { _id: "unknown", companyName: "Unknown Company" };
-         continue;
-      }
+    // 2. Extract all unique company IDs from jobs
+    const companyIds = [...new Set(jobs.map(job => job.company).filter(Boolean))];
 
-      // Company profile dhundhein
-      const profile = await CompanyProfile.findOne({ owner: jobs[i].company });
-      
+    // 3. Sirf 1 DB call mein saari companies ki profile le aao! ($in operator)
+    const companyProfiles = await CompanyProfile.find({ owner: { $in: companyIds } }).lean();
+
+    // Map bana lo taaki search instant ho (O(1) time complexity)
+    const profileMap = {};
+    companyProfiles.forEach(profile => {
+      profileMap[profile.owner.toString()] = profile;
+    });
+
+    // 4. Har job ke andar company details map karo
+    for (let i = 0; i < jobs.length; i++) {
+      const compId = jobs[i].company ? jobs[i].company.toString() : null;
+      const profile = profileMap[compId];
+
       if (profile) {
         jobs[i].company = {
           _id: profile._id,
@@ -27,32 +36,29 @@ exports.getAllJobs = async (req, res) => {
           industry: profile.industry,
           location: profile.location,
           logo: profile.logo,
-          // 🚀 NAYI FIELDS YAHAN ADD KI HAIN 👇
           website: profile.website,
           description: profile.description 
         };
       } else {
-         jobs[i].company = { _id: jobs[i].company, companyName: "Unknown Company" };
+         jobs[i].company = { _id: jobs[i].company || "unknown", companyName: "Unknown Company" };
       }
     }
 
     res.status(200).json(jobs);
   } catch (error) {
-    // 🔴 YEH LINE AAPKO TERMINAL MEIN ASLI ERROR BATAYEGI 🔴
-    console.error("🔥 GET ALL JOBS MEIN ERROR AAYA:", error.message); 
-    console.error(error); // Pura kachra (stack trace) print karega
-
+    console.error("🔥 GET ALL JOBS ERROR:", error.message); 
     res.status(500).json({ error: error.message });
   }
 };
 
-
+// ==========================================
+// 2️⃣ CREATE JOB (With Credits & Expiry)
+// ==========================================
 exports.createJob = async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
-    const postCost = 100; // Ek job post karne ke credits
+    const postCost = 100; 
 
-    // 🔴 THE NEW FIX: 1. Fetch Company User & Check Credits
     const companyUser = await User.findById(userId);
     if (!companyUser) return res.status(404).json({ message: "Company User not found" });
 
@@ -63,11 +69,9 @@ exports.createJob = async (req, res) => {
       });
     }
 
-    // 🟢 THE NEW FIX: 2. Deduct 100 Credits
     companyUser.credits -= postCost;
     await companyUser.save();
 
-    // ⏳ THE NEW FIX: 3. Set Expiry Date (30 Days from today)
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
 
@@ -79,13 +83,12 @@ exports.createJob = async (req, res) => {
     const skills = skillsInput ? skillsInput.split(",").map(s => s.trim()) : [];
     const languages = languagesInput ? languagesInput.split(",").map(l => l.trim()) : [];
 
-    // 🛠️ THE NEW FIX: 4. Create Job with Expiry Info
     const job = await Job.create({
       company: userId, 
       title, experience, salary, skills, languages, daysLeft, description,
       isPaused: false,
-      isExpired: false,        // Auto pause ke liye fallback
-      expiresAt: expiryDate,   // 30 din baad ki date
+      isExpired: false,        
+      expiresAt: expiryDate,   
       quiz: quiz || [],     
       coding: coding || []  
     });
@@ -102,59 +105,65 @@ exports.createJob = async (req, res) => {
 };
 
 // ==========================================
-// 2️⃣ ADD APTITUDE QUESTION (AddQuestionModal se)
+// 3️⃣ ADD APTITUDE QUESTION(S) (🚀 SMART LOGIC)
 // ==========================================
 exports.addAptitudeQuestion = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const { question, options, correctAnswer, marks } = req.body;
+    const { question, options, correctAnswer, marks, questions } = req.body;
 
     const job = await Job.findOne({ _id: jobId, company: req.user._id || req.user.id });
     if (!job) return res.status(404).json({ message: "Job not found or Unauthorized" });
 
-    // Job ke andar quiz array mein naya question daalna
-    job.quiz.push({ question, options, correctAnswer, marks: marks || 1 });
+    // Agar array aaya hai toh saare ek sath daal do, warna single daalo
+    if (questions && Array.isArray(questions)) {
+      job.quiz.push(...questions);
+    } else if (question) {
+      job.quiz.push({ question, options, correctAnswer, marks: marks || 1 });
+    } else {
+      return res.status(400).json({ message: "No question data provided" });
+    }
+    
     await job.save();
 
-    res.status(201).json({ message: "Aptitude question added successfully ✅", job });
+    res.status(201).json({ message: "Aptitude question(s) added successfully ✅", job });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // ==========================================
-// 3️⃣ ADD CODING QUESTION (AddQuestionModal se)
+// 4️⃣ ADD CODING QUESTION(S) (🚀 SMART LOGIC)
 // ==========================================
 exports.addCodingQuestion = async (req, res) => {
   try {
     const { jobId } = req.params;
-    const { title, description, difficulty, marks, testCases, sampleInput, sampleOutput, constraints } = req.body;
+    const { title, description, difficulty, marks, testCases, sampleInput, sampleOutput, constraints, questions } = req.body;
 
     const job = await Job.findOne({ _id: jobId, company: req.user._id || req.user.id });
     if (!job) return res.status(404).json({ message: "Job not found or Unauthorized" });
 
-    // Job ke andar coding array mein naya problem daalna
-    job.coding.push({
-      title,
-      description,
-      difficulty,
-      marks: marks || 10,
-      testCases,
-      sampleInput,
-      sampleOutput,
-      constraints
-    });
+    // Agar array aaya hai toh saare ek sath daal do, warna single daalo
+    if (questions && Array.isArray(questions)) {
+      job.coding.push(...questions);
+    } else if (title) {
+      job.coding.push({
+        title, description, difficulty, marks: marks || 10, testCases, sampleInput, sampleOutput, constraints
+      });
+    } else {
+      return res.status(400).json({ message: "No coding question data provided" });
+    }
     
     await job.save();
 
-    res.status(201).json({ message: "Coding question added successfully ✅", job });
+    res.status(201).json({ message: "Coding question(s) added successfully ✅", job });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 // ==========================================
-// 4️⃣ GET ALL JOBS FOR COMPANY (HiredTab load)
+// 5️⃣ GET ALL JOBS FOR COMPANY (HiredTab load)
 // ==========================================
 exports.getCompanyJobs = async (req, res) => {
   try {
@@ -166,7 +175,7 @@ exports.getCompanyJobs = async (req, res) => {
 };
 
 // ==========================================
-// 5️⃣ TOGGLE PAUSE STATUS (Pause/Resume Btn)
+// 6️⃣ TOGGLE PAUSE STATUS (Pause/Resume Btn)
 // ==========================================
 exports.togglePauseJob = async (req, res) => {
   try {
@@ -183,7 +192,7 @@ exports.togglePauseJob = async (req, res) => {
 };
 
 // ==========================================
-// 6️⃣ DELETE JOB (Remove Position Btn)
+// 7️⃣ DELETE JOB (Remove Position Btn)
 // ==========================================
 exports.deleteJob = async (req, res) => {
   try {
@@ -199,34 +208,6 @@ exports.deleteJob = async (req, res) => {
   }
 };
 
-
-// 7️⃣ GET APPLICANTS (History Modal ke liye)
-
-exports.getApplicants = async (req, res) => {
-  try {
-    if(!Application) return res.json([]); // Guard clause
-    
-    // 1. Application model mein se wo applications dhoondho jinki 'job' ID match karti ho
-    // 2. '.populate("student")' se us application ke andar student ka naam aur photo bhi le aao
-    const apps = await Application.find({ job: req.params.jobId }).populate("student");
-
-    // 3. Data ko waise format karo jaisa HistoryModal.jsx ko chahiye
-    const formatted = apps.map(a => ({
-      id: a._id,
-      name: a.student?.name || "Unknown",
-      img: a.student?.avatar || "/default.png",
-      status: a.status,
-      date: a.appliedAt ? new Date(a.appliedAt).toDateString() : new Date().toDateString(),
-      quiz: a.quizScore,
-      coding: a.codingScore
-    }));
-    
-    // 4. Frontend ko array bhej do
-    res.json(formatted);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
 // ==========================================
 // 8️⃣ GET SINGLE STUDENT DETAILS (StudentDetailModal)
 // ==========================================
@@ -252,23 +233,20 @@ exports.getStudentDetails = async (req, res) => {
   }
 };
 
-
-
+// ==========================================
+// 9️⃣ GET JOB APPLICANTS (History Modal)
+// ==========================================
 exports.getJobApplicants = async (req, res) => {
   try {
     const { jobId } = req.params;
 
-    // 1. Database se is job ki saari applications dhoondhein
-    // 2. .populate('student') ka use karke student ki details (name, img) bhi sath le aayen
     const applications = await Application.find({ job: jobId })
       .populate("student", "name avatar profilePic img") 
-      .sort({ createdAt: -1 }); // Nayi applications pehle dikhane ke liye
+      .sort({ createdAt: -1 }); 
 
-    // 3. Frontend ke HistoryModal ko jaisa data chahiye, us format mein map karein
     const formattedData = applications.map(app => ({
       id: app._id,
       name: app.student?.name || "Unknown Student",
-      // Agar image nahi hai toh ui-avatars se ek default image bana dega
       img: app.student?.avatar || app.student?.profilePic || app.student?.img || `https://ui-avatars.com/api/?name=${app.student?.name || 'U'}&background=f3f0ff&color=553f9a`,
       status: app.status || "Pending",
       date: new Date(app.createdAt).toDateString(),
@@ -276,7 +254,6 @@ exports.getJobApplicants = async (req, res) => {
       coding: app.codingScore || 0
     }));
 
-    // 4. Data frontend ko bhej dein
     res.status(200).json(formattedData);
 
   } catch (error) {
@@ -285,17 +262,15 @@ exports.getJobApplicants = async (req, res) => {
   }
 };
 
-
-
+// ==========================================
+// 🔟 GET PLACEMENTS (Hired Students)
+// ==========================================
 exports.getPlacements = async (req, res) => {
   try {
-    // Sirf wahi applications dhundho jinka status "Hired" hai
-    // Saath mein Student ki details (name, img, skills) aur Job ki details (title) bhi populate karo
     const hiredApps = await Application.find({ status: "Hired" })
       .populate("student", "name avatar degree college skills")
       .populate("job", "title");
 
-    // Frontend ko jaisa data chahiye, usme map kar do
     const formattedData = hiredApps.map(app => ({
       id: app.student?._id || app._id,
       name: app.student?.name || "Unknown",
@@ -309,7 +284,7 @@ exports.getPlacements = async (req, res) => {
       skills: app.student?.skills || []
     }));
 
-    // Deduplicate logic (Ek student ka naam ek hi baar aaye)
+    // Deduplicate logic
     const seen = new Set();
     const uniquePlacements = formattedData.filter(a => {
       if (seen.has(a.name)) return false;
@@ -323,6 +298,3 @@ exports.getPlacements = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch placements" });
   }
 };
-
-
-

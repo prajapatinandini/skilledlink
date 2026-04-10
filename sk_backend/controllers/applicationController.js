@@ -9,6 +9,7 @@ const TestAttempt = require("../models/TestAttempt");
 const { sendStatusEmail } = require("../utils/sendEmail");
 
 // Submit GitHub Project
+
 exports.submitGithubProject = async (req, res) => {
   try {
     const { applicationId, githubUrl } = req.body;

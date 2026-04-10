@@ -264,7 +264,6 @@ const StudentPage = () => {
                   <h3 style={{ color: '#2d1f6e', marginBottom: '20px' }}>Available Openings</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                     {jobsData.filter(j => j.company?._id === selectedCompany?._id).map((job) => {
-                      // 🚀 LOGIC FOR EXPIRED JOBS
                       const isExpired = job.daysLeft <= 0;
                       return (
                         <div key={job._id} 
@@ -300,7 +299,6 @@ const StudentPage = () => {
                 <div style={cardStyle}>
                   <button onClick={() => setViewLevel("JOB_LIST")} style={backLinkStyle}>← Back to All Roles</button>
                   
-                  {/* 🚀 EXPIRED LOGIC FOR BUTTON AND BADGE */}
                   {(() => {
                     const isExpired = selectedJob.daysLeft <= 0;
                     return (
@@ -342,7 +340,14 @@ const StudentPage = () => {
                           <div style={assessmentBoxStyle}>
                             <h4 style={{ margin: '0 0 15px 0', color: '#2d1f6e' }}>Assessment Rounds</h4>
                             <div style={roundCardStyle}>📂 1. Project Review</div>
-                            {selectedJob.quiz?.length > 0 && <div style={{ ...roundCardStyle, color: '#1890ff' }}>🧠 2. Aptitude Quiz ({selectedJob.quiz.length} Qs)</div>}
+                            
+                            {/* 🚀 THE UI FIX IS HERE 👇 */}
+                            {selectedJob.quiz?.length > 0 && (
+                              <div style={{ ...roundCardStyle, color: '#1890ff' }}>
+                                🧠 2. Aptitude Quiz ({Math.min(20, selectedJob.quiz.length)} Qs)
+                              </div>
+                            )}
+
                             {selectedJob.coding?.length > 0 && <div style={{ ...roundCardStyle, color: '#531dab' }}>💻 3. Coding Round ({selectedJob.coding.length} Problems)</div>}
                             <p style={{ fontSize: '12px', color: '#999', marginTop: '15px' }}>
                                 {isExpired ? "*Applications for this role have been closed." : "*You must clear each round to proceed."}

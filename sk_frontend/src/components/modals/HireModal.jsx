@@ -19,10 +19,12 @@ const HireModal = ({ onClose, onSuccess }) => {
   const [skillText, setSkillText] = useState("");
   const [langText, setLangText] = useState("");
   
+  // 🚀 Start with 20, but HR can add more now!
   const [questions, setQuestions] = useState(
     Array(20).fill({ question: "", options: ["", "", "", ""], correct: 0 })
   );
   
+  // 🚀 Start with 3, but HR can add more!
   const [coding, setCoding] = useState(
     Array(3).fill({ title: "", problem: "", input: "", output: "", hint: "" })
   );
@@ -32,7 +34,6 @@ const HireModal = ({ onClose, onSuccess }) => {
   const [formErrors, setFormErrors] = useState({});
   const [quizErrors, setQuizErrors] = useState({});
 
- 
   const getToken = () => localStorage.getItem("token");
 
   // --- HANDLERS ---
@@ -69,6 +70,7 @@ const HireModal = ({ onClose, onSuccess }) => {
     setForm({ ...form, languages: form.languages.filter((_, i) => i !== indexToRemove) });
   };
 
+  // QUIZ HANDLERS
   const handleQuizQuestionChange = (index, value) => {
     const newQ = [...questions];
     newQ[index] = { ...newQ[index], question: value };
@@ -89,6 +91,12 @@ const HireModal = ({ onClose, onSuccess }) => {
     setQuestions(newQ);
   };
 
+  // 🚀 ADD MORE QUIZ QUESTION
+  const addMoreQuizQuestion = () => {
+    setQuestions([...questions, { question: "", options: ["", "", "", ""], correct: 0 }]);
+  };
+
+  // CODING HANDLERS
   const handleCodingChange = (index, field, value) => {
     const newC = [...coding];
     newC[index] = { ...newC[index], [field]: value };
@@ -101,22 +109,27 @@ const HireModal = ({ onClose, onSuccess }) => {
     setDifficulty(newD);
   };
 
-  
+  // 🚀 ADD MORE CODING PROBLEM
+  const addMoreCodingProblem = () => {
+    setCoding([...coding, { title: "", problem: "", input: "", output: "", hint: "" }]);
+    setDifficulty([...difficulty, "Medium"]);
+  };
+
   // ✅ CREATE JOB API INTEGRATION
   const handlePost = async () => {
     try {
       setIsSubmitting(true);
 
-      // 🟢 1. QUIZ FIX: Sirf bhare hue questions bhejein aur 'correctAnswer' naam dein
+      // 🟢 QUIZ FIX: Sirf bhare hue questions bhejein
       const validQuiz = questions
         .filter(q => q.question.trim() !== "")
         .map(q => ({
           question: q.question,
           options: q.options,
-          correctAnswer: q.correct // Backend expects index (0,1,2,3)
+          correctAnswer: q.correct 
         }));
 
-      // 🟢 2. CODING FIX: 'problem' ko 'description' banayein
+      // 🟢 CODING FIX: 'problem' ko 'description' banayein
       const validCoding = coding
         .filter(c => c.title.trim() !== "" || c.problem.trim() !== "")
         .map((c, i) => ({
@@ -125,23 +138,22 @@ const HireModal = ({ onClose, onSuccess }) => {
           difficulty: difficulty[i],
           sampleInput: c.input,
           sampleOutput: c.output,
-          testCases: [{ input: c.input, expectedOutput: c.output }] // Auto test-case create
+          testCases: [{ input: c.input, expectedOutput: c.output }] 
         }));
 
-      // 🟢 3. PAYLOAD FIX: Skills aur Languages ko directly Arrays mein bhej rahe hain taaki DB me sahi save ho
+      // 🟢 PAYLOAD
       const payload = {
         title: form.title,
         experience: form.experience,
         salary: form.salary,
-        skills: form.skills,       // Pura array bhejein
-        languages: form.languages, // Pura array bhejein
+        skills: form.skills,       
+        languages: form.languages, 
         daysLeft: Number(form.daysLeft),
         description: form.description,
         quiz: validQuiz,      
         coding: validCoding   
       };
 
-      // Ensure that this endpoint matches your backend job creation route
       const response = await axios.post(`${API_URL}/api/jobs/create`, payload, {
         headers: {
           Authorization: `Bearer ${getToken()}`,
@@ -172,7 +184,7 @@ const HireModal = ({ onClose, onSuccess }) => {
               {modalStep === 1
                 ? "Post a New Position"
                 : modalStep === 2
-                  ? "Add Quiz Questions"
+                  ? "Build Question Bank"
                   : "Add Coding Round"}
             </h2>
             <div className="modal-steps">
@@ -183,7 +195,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                 </span>
               ))}
               <div className="step-labels">
-                {["Job Details", "Quiz Questions", "Coding Round"].map(l => (
+                {["Job Details", "Question Bank", "Coding Round"].map(l => (
                   <span key={l}>{l}</span>
                 ))}
               </div>
@@ -206,7 +218,6 @@ const HireModal = ({ onClose, onSuccess }) => {
                   onChange={handleFormChange}
                   className={formErrors.title ? "input-error" : ""}
                 />
-                {formErrors.title && <span className="field-error">{formErrors.title}</span>}
               </div>
               <div className="post-field">
                 <label>Experience <span className="req">*</span></label>
@@ -215,9 +226,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                   placeholder="e.g. 0–2 Years"
                   value={form.experience}
                   onChange={handleFormChange}
-                  className={formErrors.experience ? "input-error" : ""}
                 />
-                {formErrors.experience && <span className="field-error">{formErrors.experience}</span>}
               </div>
               <div className="post-field">
                 <label>Salary <span className="req">*</span></label>
@@ -226,9 +235,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                   placeholder="e.g. ₹4–₹6 LPA"
                   value={form.salary}
                   onChange={handleFormChange}
-                  className={formErrors.salary ? "input-error" : ""}
                 />
-                {formErrors.salary && <span className="field-error">{formErrors.salary}</span>}
               </div>
               
               <div className="post-field">
@@ -239,7 +246,6 @@ const HireModal = ({ onClose, onSuccess }) => {
                   value={skillText}
                   onChange={e => setSkillText(e.target.value)}
                   onKeyDown={handleKeyDownSkill}
-                  className={formErrors.skillsInput ? "input-error" : ""}
                 />
                 <div style={{ display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "5px" }}>
                   {form.skills.map((s, i) => (
@@ -280,9 +286,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                   placeholder="e.g. 14"
                   value={form.daysLeft}
                   onChange={handleFormChange}
-                  className={formErrors.daysLeft ? "input-error" : ""}
                 />
-                {formErrors.daysLeft && <span className="field-error">{formErrors.daysLeft}</span>}
               </div>
             </div>
             <div className="post-field post-field-full">
@@ -293,9 +297,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                 value={form.description}
                 onChange={handleFormChange}
                 rows={4}
-                className={formErrors.description ? "input-error" : ""}
               />
-              {formErrors.description && <span className="field-error">{formErrors.description}</span>}
             </div>
             <div className="modal-footer">
               <button className="cancel-btn" onClick={onClose}>Cancel</button>
@@ -307,17 +309,25 @@ const HireModal = ({ onClose, onSuccess }) => {
         {/* Step 2: Quiz Questions */}
         {modalStep === 2 && (
           <>
-            <p className="post-job-sub">Add 20 MCQ questions.</p>
-            <div className="quiz-questions-list" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
+            <div style={{ background: "#f8faff", border: "1px solid #ede8fb", padding: "12px", borderRadius: "8px", marginBottom: "15px" }}>
+              <p style={{ margin: 0, color: "#553f9a", fontSize: "14px", fontWeight: "bold" }}>
+                🛡️ Smart Anti-Cheat System
+              </p>
+              <p style={{ margin: "5px 0 0 0", color: "#666", fontSize: "13px" }}>
+                Add as many questions as you want. Our system will randomly select <strong>20 questions</strong> and shuffle the options for each candidate.
+              </p>
+            </div>
+            
+            <div className="quiz-questions-list" style={{ maxHeight: "350px", overflowY: "auto", paddingRight: "10px" }}>
               {questions.map((q, qi) => (
                 <div key={qi} className="quiz-q-card" id={`q${qi}`} style={{ marginBottom: "20px", borderBottom: "1px solid #ddd", paddingBottom: "15px" }}>
                   <div className="quiz-q-header">
-                    <span className="quiz-q-number" style={{ fontWeight: "bold" }}>Q{qi + 1}</span>
+                    <span className="quiz-q-number" style={{ fontWeight: "bold" }}>Question {qi + 1}</span>
                   </div>
                   <input
                     style={{ width: "100%", marginBottom: "10px", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
-                    className={`quiz-q-input ${quizErrors[`q${qi}`] ? "input-error" : ""}`}
-                    placeholder={`Question ${qi + 1}...`}
+                    className="quiz-q-input"
+                    placeholder={`Type your question here...`}
                     value={q.question}
                     onChange={e => handleQuizQuestionChange(qi, e.target.value)}
                   />
@@ -334,22 +344,29 @@ const HireModal = ({ onClose, onSuccess }) => {
                           checked={q.correct === oi}
                           onChange={() => handleQuizAnswerChange(qi, oi)}
                         />
-                        <span className="option-letter" style={{ width: "20px" }}>{["A", "B", "C", "D"][oi]}</span>
+                        <span className="option-letter" style={{ width: "20px", fontWeight: "bold" }}>{["A", "B", "C", "D"][oi]}</span>
                         <input
-                          style={{ flex: 1, padding: "5px", border: "1px solid #eee" }}
+                          style={{ flex: 1, padding: "8px", border: q.correct === oi ? "1px solid #16a34a" : "1px solid #eee", borderRadius: "4px" }}
                           className="option-text-input"
                           placeholder={`Option ${["A", "B", "C", "D"][oi]}`}
                           value={opt}
                           onChange={e => handleQuizOptionChange(qi, oi, e.target.value)}
                         />
-                        {q.correct === oi && <span className="correct-badge" style={{ color: "green", fontSize: "12px" }}>✓ Correct</span>}
+                        {q.correct === oi && <span className="correct-badge" style={{ color: "#16a34a", fontSize: "12px", fontWeight: "bold" }}>✓ Correct</span>}
                       </div>
                     ))}
                   </div>
                 </div>
               ))}
+              
+              <button 
+                onClick={addMoreQuizQuestion} 
+                style={{ width: "100%", padding: "12px", background: "#f3f0ff", color: "#553f9a", border: "1px dashed #553f9a", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", marginTop: "10px" }}
+              >
+                + Add Another Question to Bank
+              </button>
             </div>
-            <div className="modal-footer">
+            <div className="modal-footer" style={{ marginTop: "20px" }}>
               <button className="cancel-btn" onClick={() => setModalStep(1)}>← Back</button>
               <button className="post-btn" onClick={() => setModalStep(3)}>Next: Coding Round →</button>
             </div>
@@ -359,27 +376,27 @@ const HireModal = ({ onClose, onSuccess }) => {
         {/* Step 3: Coding Round */}
         {modalStep === 3 && (
           <>
-            <p className="post-job-sub">Add 3 coding problems.</p>
-            <div className="coding-questions-list" style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "10px" }}>
+            <p className="post-job-sub">Add coding problems for the technical round.</p>
+            <div className="coding-questions-list" style={{ maxHeight: "350px", overflowY: "auto", paddingRight: "10px" }}>
               {coding.map((c, ci) => (
-                <div key={ci} className="coding-q-card" style={{ marginBottom: "20px", border: "1px solid #eee", padding: "15px", borderRadius: "8px" }}>
+                <div key={ci} className="coding-q-card" style={{ marginBottom: "20px", border: "1px solid #eee", padding: "15px", borderRadius: "8px", background: "#fafafa" }}>
                   <div className="coding-q-header" style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-                    <span className="coding-q-number" style={{ fontWeight: "bold" }}>Problem {ci + 1}</span>
+                    <span className="coding-q-number" style={{ fontWeight: "bold", color: "#2d1f6e" }}>Problem {ci + 1}</span>
                     <div className="difficulty-selector" style={{ display: "flex", gap: "5px" }}>
                       {(DIFF || ["Easy", "Medium", "Hard"]).map(d => (
                         <button
                           key={d}
                           type="button"
                           style={{
-                            padding: "4px 8px", 
+                            padding: "4px 10px", 
                             fontSize: "12px", 
                             cursor: "pointer",
-                            background: difficulty[ci] === d ? "#553f9a" : "#f0f0f0",
-                            color: difficulty[ci] === d ? "white" : "black",
-                            border: "none",
-                            borderRadius: "4px"
+                            background: difficulty[ci] === d ? "#553f9a" : "#fff",
+                            color: difficulty[ci] === d ? "white" : "#666",
+                            border: difficulty[ci] === d ? "none" : "1px solid #ddd",
+                            borderRadius: "15px",
+                            fontWeight: "bold"
                           }}
-                          className={`diff-btn diff-${d.toLowerCase()} ${difficulty[ci] === d ? "diff-active" : ""}`}
                           onClick={() => handleDifficultyChange(ci, d)}
                         >
                           {d}
@@ -388,7 +405,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                     </div>
                   </div>
                   <div className="coding-field" style={{ marginBottom: "10px" }}>
-                    <label style={{ display: "block", marginBottom: "5px" }}>Title <span className="req">*</span></label>
+                    <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", fontWeight: "bold" }}>Title <span className="req">*</span></label>
                     <input
                       style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
                       placeholder="e.g. Two Sum"
@@ -397,10 +414,10 @@ const HireModal = ({ onClose, onSuccess }) => {
                     />
                   </div>
                   <div className="coding-field" style={{ marginBottom: "10px" }}>
-                    <label style={{ display: "block", marginBottom: "5px" }}>Problem Statement <span className="req">*</span></label>
+                    <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", fontWeight: "bold" }}>Problem Statement <span className="req">*</span></label>
                     <textarea
                       style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                      placeholder="Describe..."
+                      placeholder="Describe the problem..."
                       value={c.problem}
                       rows={3}
                       onChange={e => handleCodingChange(ci, "problem", e.target.value)}
@@ -408,39 +425,38 @@ const HireModal = ({ onClose, onSuccess }) => {
                   </div>
                   <div className="coding-io-grid" style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
                     <div className="coding-field" style={{ flex: 1 }}>
-                      <label style={{ display: "block", marginBottom: "5px" }}>Input <span className="req">*</span></label>
+                      <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", fontWeight: "bold" }}>Test Case Input <span className="req">*</span></label>
                       <textarea
-                        style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                        placeholder="Expected input"
+                        style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", fontFamily: "monospace" }}
+                        placeholder="[2, 7, 11, 15], 9"
                         rows={2}
                         value={c.input}
                         onChange={e => handleCodingChange(ci, "input", e.target.value)}
                       />
                     </div>
                     <div className="coding-field" style={{ flex: 1 }}>
-                      <label style={{ display: "block", marginBottom: "5px" }}>Output <span className="req">*</span></label>
+                      <label style={{ display: "block", marginBottom: "5px", fontSize: "13px", fontWeight: "bold" }}>Expected Output <span className="req">*</span></label>
                       <textarea
-                        style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                        placeholder="Expected output"
+                        style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px", fontFamily: "monospace" }}
+                        placeholder="[0, 1]"
                         rows={2}
                         value={c.output}
                         onChange={e => handleCodingChange(ci, "output", e.target.value)}
                       />
                     </div>
                   </div>
-                  <div className="coding-field">
-                    <label style={{ display: "block", marginBottom: "5px" }}>Hint (optional)</label>
-                    <input
-                      style={{ width: "100%", padding: "8px", border: "1px solid #ccc", borderRadius: "4px" }}
-                      placeholder="Hint..."
-                      value={c.hint}
-                      onChange={e => handleCodingChange(ci, "hint", e.target.value)}
-                    />
-                  </div>
                 </div>
               ))}
+
+              <button 
+                onClick={addMoreCodingProblem} 
+                style={{ width: "100%", padding: "12px", background: "#f3f0ff", color: "#553f9a", border: "1px dashed #553f9a", borderRadius: "8px", fontWeight: "bold", cursor: "pointer", marginTop: "10px" }}
+              >
+                + Add Another Coding Problem
+              </button>
             </div>
-            <div className="modal-footer">
+            
+            <div className="modal-footer" style={{ marginTop: "20px" }}>
               <button className="cancel-btn" onClick={() => setModalStep(2)} disabled={isSubmitting}>← Back</button>
               <button 
                 className="post-btn" 
@@ -448,7 +464,7 @@ const HireModal = ({ onClose, onSuccess }) => {
                 disabled={isSubmitting}
                 style={{ opacity: isSubmitting ? 0.7 : 1 }}
               >
-                {isSubmitting ? "Posting..." : "Post Position"}
+                {isSubmitting ? "Posting Job..." : "🚀 Post Position"}
               </button>
             </div>
           </>
