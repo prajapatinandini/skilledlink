@@ -228,8 +228,15 @@ const Assessment = () => {
       setPhase("mcq");
       
     } catch (error) {
-      if (error.response?.status === 402) setShowPaymentModal(true);
-      else alert("Error starting test.");
+      // 🚀 THE FIX IS HERE 🚀
+      console.error("MCQ Start Error:", error);
+      if (error.response?.status === 402) {
+         setShowPaymentModal(true);
+      } else {
+         // Ye line aapko screen par batayegi ki Backend kya gussa kar raha hai!
+         const backendErrorMsg = error.response?.data?.message || error.message || "Unknown error";
+         alert(`Assessment Failed: ${backendErrorMsg}`); 
+      }
     } finally {
       if(!showPaymentModal) setLoading(false);
     }
