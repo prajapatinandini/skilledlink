@@ -420,6 +420,8 @@ exports.submitProjects = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
 // ================= SAVE PROJECTS FROM ASSESSMENT =================
 exports.saveAssessmentProjects = async (req, res) => {
   try {
@@ -428,13 +430,28 @@ exports.saveAssessmentProjects = async (req, res) => {
     const projectIds = [];
 
     if (projects && projects.length > 0) {
+      // 🚀 FIX 1: Frontend se jo attemptId aayi hai, usse Job ID nikalo
+      const attemptId = projects[0].attemptId; 
+      const attempt = await TestAttempt.findById(attemptId);
+      if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+
+      const jobId = attempt.company; // 👈 Job ID mil gayi!
+
       for (let p of projects) {
         if (p.url && p.url.trim() !== "") {
-          let existingProj = await Project.findOne({ repoUrl: p.url, userId: userId });
+          
+          // 🚀 FIX 2: Teeno cheezein match karo (User + Job + URL)
+          let existingProj = await Project.findOne({ 
+            repoUrl: p.url, 
+            userId: userId,
+            jobId: jobId 
+          });
           
           if (!existingProj) {
+            // 🚀 FIX 3: Naya project banate waqt jobId zaroor bhejo
             existingProj = await Project.create({
               userId: userId,
+              jobId: jobId, // 👈 Ab MongoDB error nahi dega!
               title: p.title || "Assessment Project",
               repoUrl: p.url,
             });
