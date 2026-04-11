@@ -421,44 +421,39 @@ exports.submitProjects = async (req, res) => {
   }
 };
 
-
 exports.saveAssessmentProjects = async (req, res) => {
   try {
     const { projects } = req.body;
     const userId = req.user ? (req.user.id || req.user._id) : null;
 
     if (!userId) return res.status(401).json({ message: "Auth Failed" });
-    if (!projects || !projects.length) return res.status(400).json({ message: "No data" });
 
-    // 1. Get the Job ID from the TestAttempt
-    const attemptId = projects[0].attemptId;
+    // 🚀 THE CRITICAL FIX: Get jobId from the Attempt
+    const attemptId = projects[0]?.attemptId;
     const attempt = await TestAttempt.findById(attemptId);
     
-    if (!attempt) return res.status(404).json({ message: "Attempt Not Found" });
+    if (!attempt) return res.status(404).json({ message: "Attempt not found" });
     const jobId = attempt.company; 
 
     const projectIds = [];
-
     for (let p of projects) {
       const repoUrl = p.repoUrl || p.url;
       if (repoUrl) {
-        // 2. Simple Find or Create
-        let project = await Project.findOne({ repoUrl, userId, jobId });
-        
-        if (!project) {
-          project = await Project.create({
+        // Find or Create with all three unique keys
+        let proj = await Project.findOne({ repoUrl, userId, jobId });
+        if (!proj) {
+          proj = await Project.create({
             userId,
-            jobId, // This fixes the "jobId is required" error
+            jobId, // 👈 Ab MongoDB error nahi dega kyunki field present hai
             title: p.title || "Assessment Project",
             repoUrl
           });
         }
-        projectIds.push(project._id);
+        projectIds.push(proj._id);
       }
     }
     res.status(200).json({ message: "Success", projectIds });
   } catch (error) {
-    console.error("CRITICAL ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
