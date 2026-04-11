@@ -427,47 +427,38 @@ exports.saveAssessmentProjects = async (req, res) => {
     const { projects } = req.body;
     const userId = req.user ? (req.user.id || req.user._id) : null;
 
-    if (!userId) return res.status(401).json({ message: "User not authenticated" });
+    if (!userId) return res.status(401).json({ message: "Auth Failed" });
+    if (!projects || !projects.length) return res.status(400).json({ message: "No data" });
+
+    // 1. Get the Job ID from the TestAttempt
+    const attemptId = projects[0].attemptId;
+    const attempt = await TestAttempt.findById(attemptId);
+    
+    if (!attempt) return res.status(404).json({ message: "Attempt Not Found" });
+    const jobId = attempt.company; 
 
     const projectIds = [];
 
-    if (projects && projects.length > 0) {
-      // 🚀 THE FIX: Frontend se attemptId nikal kar link karo
-      const attemptId = projects[0].attemptId;
-      if (!attemptId) return res.status(400).json({ message: "Attempt ID missing" });
-
-      const attempt = await TestAttempt.findById(attemptId);
-      if (!attempt) return res.status(404).json({ message: "Test Attempt not found" });
-
-      const jobId = attempt.company; // 🎯 Mandatory Job ID mil gayi
-
-      for (let p of projects) {
-        // Frontend 'repoUrl' bhej raha hai
-        const repoUrl = p.repoUrl || p.url;
-        if (repoUrl && repoUrl.trim() !== "") {
-          
-          let existingProj = await Project.findOne({ 
-            repoUrl, 
-            userId, 
-            jobId 
+    for (let p of projects) {
+      const repoUrl = p.repoUrl || p.url;
+      if (repoUrl) {
+        // 2. Simple Find or Create
+        let project = await Project.findOne({ repoUrl, userId, jobId });
+        
+        if (!project) {
+          project = await Project.create({
+            userId,
+            jobId, // This fixes the "jobId is required" error
+            title: p.title || "Assessment Project",
+            repoUrl
           });
-
-          if (!existingProj) {
-            existingProj = await Project.create({
-              userId,
-              jobId,
-              title: p.title || "Assessment Project",
-              repoUrl
-            });
-          }
-          projectIds.push(existingProj._id);
         }
+        projectIds.push(project._id);
       }
     }
-
     res.status(200).json({ message: "Success", projectIds });
   } catch (error) {
-    console.error("❌ Backend Crash Log:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("CRITICAL ERROR:", error);
+    res.status(500).json({ message: error.message });
   }
 };
