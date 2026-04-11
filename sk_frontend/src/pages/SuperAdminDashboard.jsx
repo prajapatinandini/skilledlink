@@ -8,7 +8,7 @@ const SuperAdminDashboard = () => {
   
   const [selectedCompany, setSelectedCompany] = useState(null); 
 
-  const API_URL = "https://skilledlink.in"; // Live URL
+  const API_URL = "https://skilledlink-f4lp.onrender.com"; 
 
   const getAuthHeader = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
