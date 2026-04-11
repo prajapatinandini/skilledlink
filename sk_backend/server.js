@@ -58,7 +58,7 @@ app.use("/api/jobs", require("./routes/jobRoutes"));
 app.use("/api/assessment", require("./routes/assessmentRoutes"));
 app.use("/api/payment", require("./routes/paymentRoutes")); 
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
-
+app.use("/api/admin", require("./routes/adminRoutes"));
 // 🚀 ================= CRON JOB ================= 🚀
 cron.schedule('0 0 * * *', async () => {
   try {

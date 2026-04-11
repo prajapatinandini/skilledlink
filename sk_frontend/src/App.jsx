@@ -29,6 +29,9 @@ import CompanyProfileCreate from "./pages/CompanyProfileCreate";
 import Dashboard from "./pages/Dashboard";
 import CompanyDashboard from "./CompanyDashboard";
 
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+
+
 function App() {
   return (
     <BrowserRouter>
@@ -56,6 +59,8 @@ function App() {
         {/* Company Flow */}
         <Route path="/company/create-profile" element={<CompanyProfileCreate />} />
         <Route path="/company/dashboard" element={<CompanyDashboard />} />  
+        <Route path="/system-core-admin-99x" element={<SuperAdminDashboard />} />
+        
 
         {/* Optional / Legacy Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
