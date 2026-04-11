@@ -59,8 +59,8 @@ function App() {
         {/* Company Flow */}
         <Route path="/company/create-profile" element={<CompanyProfileCreate />} />
         <Route path="/company/dashboard" element={<CompanyDashboard />} />  
-        <Route path="/system-core-admin-99x" element={<SuperAdminDashboard />} />
-        
+        <Route path="/founder-desk" element={<SuperAdminDashboard />} />
+
 
         {/* Optional / Legacy Dashboard */}
         <Route path="/dashboard" element={<Dashboard />} />
