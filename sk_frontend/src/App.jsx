@@ -12,14 +12,14 @@ import ForgotPassword from "./pages/ForgotPassword";
 import LandingPage from "./pages/LandingPage";
 import Quiz from "./pages/Quiz";
 
-// 🚀 FIX 1: Screenshot ke hisaab se SystemCheck 'components' folder mein hai
+// 🚀 SystemCheck component folder se aayega
 import SystemCheck from "./components/SystemCheck"; 
 
 // Student Pages
 import StudentPage from "./pages/StudentPage";
 import StudentProfile from "./pages/StudentProfile";
 
-// 🚀 FIX 2: Screenshot ke hisaab se Assessement 'pages' folder mein hai aur double 'e' hai
+// 🚀 Assessement pages folder se aayega
 import Assessement from "./pages/Assessement"; 
 
 // Company Pages

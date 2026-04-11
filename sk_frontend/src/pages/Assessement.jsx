@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
-import Proctoring from "./Proctoring"; 
+import Proctoring from "../components/Proctoring"; 
 
 const Assessment = () => {
   const navigate = useNavigate();
