@@ -11,13 +11,14 @@ import ForgotPassword from "./pages/ForgotPassword";
 // Core Pages
 import LandingPage from "./pages/LandingPage";
 import Quiz from "./pages/Quiz";
-import SystemCheck from "./SystemCheck"; // ✅ Make sure file is in 'src/' folder
+// 🚀 FIXED: Importing from pages folder
+import SystemCheck from "./pages/SystemCheck"; 
 
 // Student Pages
 import StudentPage from "./pages/StudentPage";
 import StudentProfile from "./pages/StudentProfile";
-// 🚨 CHECK: If your file name is Assessment.jsx, change import below
-import Assessement from "./pages/Assessement"; 
+// 🚀 FIXED: Corrected spelling to Assessment and path to pages folder
+import Assessment from "./pages/Assessment"; 
 
 // Company Pages
 import CompanyProfileCreate from "./pages/CompanyProfileCreate";
@@ -48,7 +49,7 @@ function App() {
         
         {/* 🚀 System Check Flow */}
         <Route path="/system-check/:testId" element={<SystemCheck />} />
-        <Route path="/assessment/:testId" element={<Assessement />} /> 
+        <Route path="/assessment/:testId" element={<Assessment />} /> 
 
         {/* Company Flow */}
         <Route path="/company/create-profile" element={<CompanyProfileCreate />} />
