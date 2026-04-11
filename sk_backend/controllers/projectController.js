@@ -1,5 +1,5 @@
 const Project = require("../models/Project");
-
+const TestAttempt = require("../models/TestAttempt");
 // ================= ADD PROJECT =================
 exports.addProject = async (req, res) => {
   try {
@@ -60,28 +60,41 @@ exports.deleteProject = async (req, res) => {
 };
 
 
+ 
+
 // ================= ADD MULTIPLE PROJECTS =================
 exports.addMultipleProjects = async (req, res) => {
   try {
-    // 🟢 FIX 1: Ensure user is logged in and safely extract ID
     if (!req.user) {
       return res.status(401).json({ message: "Unauthorized: User token missing ya invalid hai" });
     }
-    const loggedInUserId = req.user._id || req.user.id; // Safe extraction
+    const loggedInUserId = req.user._id || req.user.id; 
 
     const { projects } = req.body; 
 
-    // Validation
     if (!projects || !Array.isArray(projects) || projects.length === 0) {
       return res.status(400).json({ message: "Please provide an array of projects" });
     }
 
-    // 🟢 FIX 2: Safely map projects with fallback values
+    // 🚀 THE FINAL FIX: Attempt ID se Job ID (company) nikalna
+    const attemptId = projects[0].attemptId;
+    if (!attemptId) {
+        return res.status(400).json({ message: "Attempt ID is missing" });
+    }
+
+    const attempt = await TestAttempt.findById(attemptId);
+    if (!attempt) {
+        return res.status(404).json({ message: "Test attempt not found" });
+    }
+
+    const jobId = attempt.company; // 🎯 MIL GAYI JOB ID!
+
+    // 🟢 Safely map projects aur jobId add karo
     const projectsToInsert = projects.map(proj => ({
-      userId: loggedInUserId,  
-      title: proj.title || "Assessment Project", // Agar title empty hua toh error nahi aayega
-      repoUrl: proj.repoUrl,
-      attemptId: proj.attemptId 
+      userId: loggedInUserId,
+      jobId: jobId, // 👈 AB MONGOOSE ERROR NAHI DEGA!
+      title: proj.title || "Assessment Project", 
+      repoUrl: proj.repoUrl
     }));
 
     // Mongoose ka insertMany() use karke ek sath saare save karna
@@ -93,7 +106,6 @@ exports.addMultipleProjects = async (req, res) => {
     });
 
   } catch (err) {
-    // 🟢 FIX 3: Agar fir bhi fail ho, toh terminal me EXACT ERROR print karega
     console.error("❌ Add Multiple Projects Error:", err); 
     res.status(500).json({ error: err.message });
   }
