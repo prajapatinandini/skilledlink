@@ -11,14 +11,16 @@ import ForgotPassword from "./pages/ForgotPassword";
 // Core Pages
 import LandingPage from "./pages/LandingPage";
 import Quiz from "./pages/Quiz";
-// 🚀 FIXED: Importing from pages folder
-import SystemCheck from "./pages/SystemCheck"; 
+
+// 🚀 FIX 1: SystemCheck aapne 'src' folder mein rakha hai, toh seedha import:
+import SystemCheck from "./SystemCheck"; 
 
 // Student Pages
 import StudentPage from "./pages/StudentPage";
 import StudentProfile from "./pages/StudentProfile";
-// 🚀 FIXED: Corrected spelling to Assessment and path to pages folder
-import Assessment from "./pages/Assessment"; 
+
+// 🚀 FIX 2: Aapki file ki spelling "Assessement" (double 'e') hi rakhi hai:
+import Assessement from "./pages/Assessement"; 
 
 // Company Pages
 import CompanyProfileCreate from "./pages/CompanyProfileCreate";
@@ -49,7 +51,7 @@ function App() {
         
         {/* 🚀 System Check Flow */}
         <Route path="/system-check/:testId" element={<SystemCheck />} />
-        <Route path="/assessment/:testId" element={<Assessment />} /> 
+        <Route path="/assessment/:testId" element={<Assessement />} /> 
 
         {/* Company Flow */}
         <Route path="/company/create-profile" element={<CompanyProfileCreate />} />
