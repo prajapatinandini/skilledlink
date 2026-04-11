@@ -427,36 +427,47 @@ exports.saveAssessmentProjects = async (req, res) => {
   try {
     const { projects } = req.body;
     
-    // Safe check for user ID to prevent crashes
+    // 1. Safe User ID Check
     const userId = req.user ? (req.user.id || req.user._id) : null; 
     if (!userId) return res.status(401).json({ message: "Unauthorized. User not found." });
 
     const projectIds = [];
 
     if (projects && projects.length > 0) {
-      // Attempt ID se Job ID nikalna
-      const attemptId = projects[0].attemptId; 
-      const attempt = await TestAttempt.findById(attemptId);
-      if (!attempt) return res.status(404).json({ message: "Attempt not found" });
+      // 2. Pehle project se attemptId nikalo taaki Job ID mil sake
+      const firstProject = projects[0];
+      const attemptId = firstProject.attemptId;
 
-      const jobId = attempt.company; 
+      if (!attemptId) {
+        return res.status(400).json({ message: "Attempt ID is missing in request." });
+      }
+
+      // 3. TestAttempt se Job (company) ID nikalo
+      const attempt = await TestAttempt.findById(attemptId);
+      if (!attempt) return res.status(404).json({ message: "Test Attempt not found." });
+
+      const jobId = attempt.company; // 🎯 Ye rahi hamari missing jobId!
 
       for (let p of projects) {
-        // 🚀 FIX: Frontend se 'repoUrl' aata hai, 'url' nahi!
-        if (p.repoUrl && p.repoUrl.trim() !== "") {
+        // Frontend 'repoUrl' bhej raha hai
+        const repoUrl = p.repoUrl || p.url; 
+
+        if (repoUrl && repoUrl.trim() !== "") {
           
+          // 4. Check for existing project (User + Job + URL)
           let existingProj = await Project.findOne({ 
-            repoUrl: p.repoUrl, 
+            repoUrl: repoUrl, 
             userId: userId,
             jobId: jobId 
           });
           
           if (!existingProj) {
+            // 5. CREATE: Ab jobId required hai, toh hum yahan bhej rahe hain
             existingProj = await Project.create({
               userId: userId,
               jobId: jobId, 
               title: p.title || "Assessment Project",
-              repoUrl: p.repoUrl,
+              repoUrl: repoUrl,
             });
           }
           
@@ -465,10 +476,9 @@ exports.saveAssessmentProjects = async (req, res) => {
       }
     }
 
-    res.status(200).json({ message: "Projects saved", projectIds });
+    res.status(200).json({ message: "Projects saved successfully!", projectIds });
   } catch (error) {
     console.error("Save Project Error:", error);
-    // 🚀 Ab exact error frontend par dikhega
-    res.status(500).json({ message: error.message || "Internal Server Error" });
+    res.status(500).json({ message: error.message });
   }
 };
