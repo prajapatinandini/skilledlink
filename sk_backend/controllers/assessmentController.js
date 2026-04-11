@@ -422,63 +422,54 @@ exports.submitProjects = async (req, res) => {
 };
 
 
-// ================= SAVE PROJECTS FROM ASSESSMENT =================
 exports.saveAssessmentProjects = async (req, res) => {
   try {
     const { projects } = req.body;
-    
-    // 1. Safe User ID Check
-    const userId = req.user ? (req.user.id || req.user._id) : null; 
-    if (!userId) return res.status(401).json({ message: "Unauthorized. User not found." });
+    const userId = req.user ? (req.user.id || req.user._id) : null;
 
+    if (!userId) return res.status(401).json({ message: "Student not authenticated" });
+
+    if (!projects || projects.length === 0) {
+       return res.status(400).json({ message: "No projects provided" });
+    }
+
+    // 🚀 THE FIX: Pehle project se attemptId uthao
+    const attemptId = projects[0].attemptId;
+    if (!attemptId) return res.status(400).json({ message: "Attempt ID missing in payload" });
+
+    // TestAttempt se Job ID nikalna
+    const attempt = await TestAttempt.findById(attemptId);
+    if (!attempt) return res.status(404).json({ message: "Test Attempt not found" });
+
+    const jobId = attempt.company; // 🎯 Ye rahi hamari mandatory jobId
     const projectIds = [];
 
-    if (projects && projects.length > 0) {
-      // 2. Pehle project se attemptId nikalo taaki Job ID mil sake
-      const firstProject = projects[0];
-      const attemptId = firstProject.attemptId;
+    for (let p of projects) {
+      const repoUrl = p.repoUrl || p.url;
+      if (repoUrl && repoUrl.trim() !== "") {
+        
+        // Find or Create logic with jobId
+        let existingProj = await Project.findOne({ 
+          repoUrl: repoUrl, 
+          userId: userId, 
+          jobId: jobId 
+        });
 
-      if (!attemptId) {
-        return res.status(400).json({ message: "Attempt ID is missing in request." });
-      }
-
-      // 3. TestAttempt se Job (company) ID nikalo
-      const attempt = await TestAttempt.findById(attemptId);
-      if (!attempt) return res.status(404).json({ message: "Test Attempt not found." });
-
-      const jobId = attempt.company; // 🎯 Ye rahi hamari missing jobId!
-
-      for (let p of projects) {
-        // Frontend 'repoUrl' bhej raha hai
-        const repoUrl = p.repoUrl || p.url; 
-
-        if (repoUrl && repoUrl.trim() !== "") {
-          
-          // 4. Check for existing project (User + Job + URL)
-          let existingProj = await Project.findOne({ 
-            repoUrl: repoUrl, 
-            userId: userId,
-            jobId: jobId 
+        if (!existingProj) {
+          existingProj = await Project.create({
+            userId,
+            jobId,
+            title: p.title || "Assessment Project",
+            repoUrl: repoUrl
           });
-          
-          if (!existingProj) {
-            // 5. CREATE: Ab jobId required hai, toh hum yahan bhej rahe hain
-            existingProj = await Project.create({
-              userId: userId,
-              jobId: jobId, 
-              title: p.title || "Assessment Project",
-              repoUrl: repoUrl,
-            });
-          }
-          
-          projectIds.push(existingProj._id);
         }
+        projectIds.push(existingProj._id);
       }
     }
 
-    res.status(200).json({ message: "Projects saved successfully!", projectIds });
+    res.status(200).json({ message: "Success", projectIds });
   } catch (error) {
-    console.error("Save Project Error:", error);
-    res.status(500).json({ message: error.message });
+    console.error("❌ Final Project Error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 };
