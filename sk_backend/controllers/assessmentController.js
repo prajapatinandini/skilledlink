@@ -426,34 +426,37 @@ exports.submitProjects = async (req, res) => {
 exports.saveAssessmentProjects = async (req, res) => {
   try {
     const { projects } = req.body;
-    const userId = req.user.id || req.user._id; 
+    
+    // Safe check for user ID to prevent crashes
+    const userId = req.user ? (req.user.id || req.user._id) : null; 
+    if (!userId) return res.status(401).json({ message: "Unauthorized. User not found." });
+
     const projectIds = [];
 
     if (projects && projects.length > 0) {
-      // 🚀 FIX 1: Frontend se jo attemptId aayi hai, usse Job ID nikalo
+      // Attempt ID se Job ID nikalna
       const attemptId = projects[0].attemptId; 
       const attempt = await TestAttempt.findById(attemptId);
       if (!attempt) return res.status(404).json({ message: "Attempt not found" });
 
-      const jobId = attempt.company; // 👈 Job ID mil gayi!
+      const jobId = attempt.company; 
 
       for (let p of projects) {
-        if (p.url && p.url.trim() !== "") {
+        // 🚀 FIX: Frontend se 'repoUrl' aata hai, 'url' nahi!
+        if (p.repoUrl && p.repoUrl.trim() !== "") {
           
-          // 🚀 FIX 2: Teeno cheezein match karo (User + Job + URL)
           let existingProj = await Project.findOne({ 
-            repoUrl: p.url, 
+            repoUrl: p.repoUrl, 
             userId: userId,
             jobId: jobId 
           });
           
           if (!existingProj) {
-            // 🚀 FIX 3: Naya project banate waqt jobId zaroor bhejo
             existingProj = await Project.create({
               userId: userId,
-              jobId: jobId, // 👈 Ab MongoDB error nahi dega!
+              jobId: jobId, 
               title: p.title || "Assessment Project",
-              repoUrl: p.url,
+              repoUrl: p.repoUrl,
             });
           }
           
@@ -465,6 +468,7 @@ exports.saveAssessmentProjects = async (req, res) => {
     res.status(200).json({ message: "Projects saved", projectIds });
   } catch (error) {
     console.error("Save Project Error:", error);
-    res.status(500).json({ message: "Error saving projects", error: error.message });
+    // 🚀 Ab exact error frontend par dikhega
+    res.status(500).json({ message: error.message || "Internal Server Error" });
   }
 };
