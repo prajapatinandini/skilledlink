@@ -3,6 +3,7 @@ const TestAttempt = require("../models/TestAttempt");
 const User = require("../models/User"); 
 const Project = require("../models/Project");
 const { VM } = require("vm2"); 
+const { spawn } = require("child_process");
 
 exports.startTest = async (req, res) => {
   try {
@@ -252,8 +253,6 @@ exports.submitCoding = async (req, res) => {
     if (!attempt) return res.status(404).json({ message: "Attempt not found" });
     
     const job = await Job.findById(attempt.company);
-    
-    // 🚀 FIX 1: Prevent crash if Job is missing
     if (!job) return res.status(404).json({ message: "Job not found in database" });
 
     let obtainedMarks = 0;
@@ -261,7 +260,6 @@ exports.submitCoding = async (req, res) => {
     const processedCoding = [];
     let globalDebugLogs = []; 
 
-    // 🚀 FIX 2: Safe array check to prevent loop crashes
     if (!codingAnswers || !Array.isArray(codingAnswers) || codingAnswers.length === 0) {
         return res.json({ message: "codingAnswers is missing or empty!" });
     }
@@ -274,29 +272,40 @@ exports.submitCoding = async (req, res) => {
       }
 
       const qMarks = question.marks || 10;
-      
-      // 🚀 FIX 3: Sirf unhi questions ke marks jodo jo student ko assign hue the
       totalMarks += qMarks; 
 
       let passed = 0;
       let questionLogs = [];
+      const language = ans.language || "javascript"; // Language schema se aayegi
 
       if (question.testCases && question.testCases.length > 0) {
         for (let t of question.testCases) {
-          // Note: Ensure you have run `npm install vm2` and required it at the top!
-          const vm = new VM({ timeout: 1500, sandbox: {} });
-
           try {
             let cleanInput = t.input ? String(t.input) : "";
             cleanInput = cleanInput.replace(/[a-zA-Z]+\s*=\s*/g, '');
             cleanInput = cleanInput.replace(/\n/g, ',');
 
-            const wrappedCode = `${ans.code}\nsolution(${cleanInput});`;
+            // 🚀 DOCKER KE LIYE CODE WRAP KAREIN 🚀
+            // Kyunki Docker me return value seedha nahi milti, hume console.log karwana padega
+            let wrappedCode = "";
+            if (language === "javascript") {
+                wrappedCode = `
+                ${ans.code}
+                try {
+                  const result = solution(${cleanInput});
+                  console.log(result !== undefined ? JSON.stringify(result) : "undefined");
+                } catch(e) {
+                  console.error(e.message);
+                  process.exit(1);
+                }`;
+            }
+
             questionLogs.push(`Code Running: solution(${cleanInput});`); 
 
-            const result = vm.run(wrappedCode);
+            // 🟢 AWAIT DOCKER EXECUTION 🟢
+            const resultOutput = await runCodeInDocker(wrappedCode, language);
 
-            const actualOutput = result !== undefined ? JSON.stringify(result).replace(/\s/g, '') : "undefined";
+            const actualOutput = resultOutput.replace(/\s/g, '');
             const expectedOutput = String(t.expectedOutput).replace(/\s/g, '');
 
             if (actualOutput === expectedOutput) {
@@ -306,7 +315,7 @@ exports.submitCoding = async (req, res) => {
               questionLogs.push(`❌ Failed: Expected ${expectedOutput}, Got ${actualOutput}`);
             }
           } catch (err) {
-            questionLogs.push(`⚠️ VM Error: ${err.message}`);
+            questionLogs.push(`⚠️ Docker/Code Error: ${err.message}`);
           }
         }
       } else { 
@@ -323,13 +332,13 @@ exports.submitCoding = async (req, res) => {
       processedCoding.push({
         questionId: question._id,
         code: ans.code,
+        language: language,
         testCasesPassed: passed,
         totalTestCases: question.testCases ? question.testCases.length : 0,
         marksAwarded: marks
       });
     }
 
-    // Safe percentage calculation
     const percentage = totalMarks > 0 ? (obtainedMarks / totalMarks) * 100 : 0;
     
     attempt.codingAnswers = processedCoding;
@@ -456,4 +465,58 @@ exports.saveAssessmentProjects = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// ================= DOCKER HELPER FUNCTION =================
+const runCodeInDocker = (code, language = "javascript") => {
+  return new Promise((resolve, reject) => {
+    // Default JS ke liye
+    let dockerImage = "node:18-alpine"; 
+    let command = "node";
+
+    // Agar Python support karna ho toh (Future proofing):
+    if (language.toLowerCase() === "python") {
+        dockerImage = "python:3.9-alpine";
+        command = "python";
+    }
+
+    // Docker command banayenge: Network disabled, memory limited
+    const docker = spawn("docker", [
+      "run", 
+      "--rm",               // Execution ke baad container delete kar do
+      "-i",                 // Interactive (stdin open rakhne ke liye)
+      "--network", "none",  // No internet inside container (ANTI-CHEAT)
+      "--memory", "128m",   // Max 128MB RAM
+      "--cpus", "0.5",      // Max 50% of 1 CPU core
+      dockerImage, 
+      command
+    ]);
+
+    let output = "";
+    let errorOutput = "";
+
+    // Code ko Docker ke STDIN mein bhejo
+    docker.stdin.write(code);
+    docker.stdin.end();
+
+    // Output capture karo
+    docker.stdout.on("data", (data) => { output += data.toString(); });
+    docker.stderr.on("data", (data) => { errorOutput += data.toString(); });
+
+    // ⏳ Timeout logic (Docker container start hone mein thoda time lagta hai isliye 3000ms)
+    const timeout = setTimeout(() => {
+      docker.kill();
+      reject(new Error("Timeout: Code took too long to execute (Infinite loop or heavy process)"));
+    }, 3000); 
+
+    // Container band hone par
+    docker.on("close", (exitCode) => {
+      clearTimeout(timeout);
+      if (exitCode !== 0) {
+        reject(new Error(errorOutput.trim() || "Execution failed/crashed"));
+      } else {
+        resolve(output.trim());
+      }
+    });
+  });
 };

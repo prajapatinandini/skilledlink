@@ -38,6 +38,7 @@ const Assessment = () => {
   const [codingProblems, setCodingProblems] = useState([]);
   const [codingIndex, setCodingIndex] = useState(0);
   const [codes, setCodes] = useState([]);
+  const [languages, setLanguages] = useState([]); // 🚀 NEW: Language State
   const [codingTimeLeft, setCodingTimeLeft] = useState(2700);
 
   // --- PHASE 4: Result State ---
@@ -228,12 +229,10 @@ const Assessment = () => {
       setPhase("mcq");
       
     } catch (error) {
-      // 🚀 THE FIX IS HERE 🚀
       console.error("MCQ Start Error:", error);
       if (error.response?.status === 402) {
          setShowPaymentModal(true);
       } else {
-         // Ye line aapko screen par batayegi ki Backend kya gussa kar raha hai!
          const backendErrorMsg = error.response?.data?.message || error.message || "Unknown error";
          alert(`Assessment Failed: ${backendErrorMsg}`); 
       }
@@ -244,8 +243,16 @@ const Assessment = () => {
 
   // ================= 🧠 PHASE 2: MCQ =================
   const checkAns = (qId, selectedAnsIndex) => setSelectedAnswers({ ...selectedAnswers, [qId]: selectedAnsIndex });
+  
   const nextMCQ = () => {
-    if (index === mcqData.length - 1) { submitAptitudePhase(); return; }
+    if (index === mcqData.length - 1) { 
+      // 🚀 NEW: Confirmation alert before submitting MCQ
+      const isSure = window.confirm("You are on the last question. Do you want to submit the Aptitude section and start Coding? You cannot come back.");
+      if (isSure) {
+        submitAptitudePhase(); 
+      }
+      return; 
+    }
     setIndex(index + 1);
   };
 
@@ -257,6 +264,10 @@ const Assessment = () => {
       const codeRes = await axios.get(`${API_URL}/api/assessment/coding/${attemptIdFromUrl}`, getAuthHeader());
       setCodingProblems(codeRes.data);
       setCodes(codeRes.data.map(q => q.defaultCode || "// Write code here...\n"));
+      
+      // 🚀 NEW: Initialize all coding languages to 'javascript' by default
+      setLanguages(codeRes.data.map(() => "javascript")); 
+
       setPhase("coding");
     } catch (error) {
       alert("Aptitude Round Failed.");
@@ -272,6 +283,14 @@ const Assessment = () => {
     newCodes[codingIndex] = e.target.value;
     setCodes(newCodes);
   };
+
+  // 🚀 NEW: Handler for Language Dropdown
+  const handleLanguageChange = (e) => {
+    const newLanguages = [...languages];
+    newLanguages[codingIndex] = e.target.value;
+    setLanguages(newLanguages);
+  };
+
   const prevCodingProblem = () => { if (codingIndex > 0) setCodingIndex(codingIndex - 1); };
   const nextCodingProblem = () => {
     if (codingIndex === codingProblems.length - 1) submitCodingPhase();
@@ -282,7 +301,14 @@ const Assessment = () => {
     try {
       setLoading(true);
       setLoadingText("Saving Coding Answers... 💾");
-      const codingAnswers = codingProblems.map((prob, i) => ({ questionId: prob._id, code: codes[i] }));
+      
+      // 🚀 NEW: Include language in the payload sent to backend
+      const codingAnswers = codingProblems.map((prob, i) => ({ 
+        questionId: prob._id, 
+        code: codes[i],
+        language: languages[i] || "javascript" 
+      }));
+      
       await axios.post(`${API_URL}/api/assessment/coding/submit/${attemptIdFromUrl}`, { codingAnswers }, getAuthHeader());
       
       setLoadingText("Finalizing Results... 🤖");
@@ -346,7 +372,7 @@ const Assessment = () => {
         <Proctoring onCheatWarning={handleCheatWarning} maxWarnings={3} />
       )}
 
-      {/* PAYMENT MODAL (Your logic kept intact) */}
+      {/* PAYMENT MODAL */}
       {showPaymentModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 9999 }}>
           <div style={{ background: "#fff", padding: "30px", borderRadius: "15px", textAlign: "center", maxWidth: "450px" }}>
@@ -409,9 +435,31 @@ const Assessment = () => {
 
           {phase === "coding" && (
             <div>
-              <h3>{codingProblems[codingIndex].title}</h3>
+              {/* 🚀 NEW: Title and Language Dropdown in the same row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0 }}>{codingProblems[codingIndex].title}</h3>
+                
+                <select 
+                  className="inp-field" 
+                  style={{ width: 'auto', padding: '8px', cursor: 'pointer', background: '#f8faff', border: '1px solid #553f9a', borderRadius: '5px', fontWeight: 'bold', color: '#553f9a' }}
+                  value={languages[codingIndex] || "javascript"}
+                  onChange={handleLanguageChange}
+                >
+                  <option value="javascript">JavaScript (Node.js)</option>
+                  <option value="python">Python 3</option>
+                  <option value="cpp">C++</option>
+                </select>
+              </div>
+
               <p>{codingProblems[codingIndex].description || codingProblems[codingIndex].desc}</p>
-              <textarea style={{ width: '100%', height: '250px', background: '#1e293b', color: '#fff', padding: '15px', borderRadius: '10px' }} value={codes[codingIndex]} onChange={handleCodeChange} />
+              
+              <textarea 
+                style={{ width: '100%', height: '250px', background: '#1e293b', color: '#fff', padding: '15px', borderRadius: '10px', fontFamily: 'monospace', fontSize: '15px' }} 
+                value={codes[codingIndex]} 
+                onChange={handleCodeChange} 
+                spellCheck="false"
+              />
+              
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
                  <button onClick={prevCodingProblem} className="btn-primary" style={{background: '#666'}}>Back</button>
                  <button onClick={nextCodingProblem} className="btn-primary">{codingIndex === codingProblems.length - 1 ? "Submit" : "Next"}</button>

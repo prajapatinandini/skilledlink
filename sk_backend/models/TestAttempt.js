@@ -22,10 +22,10 @@ const testAttemptSchema = new mongoose.Schema({
     {
       // 🟢 YAHAN FIX KIYA HAI: Saari nayi fields add kar di hain
       questionId: { type: mongoose.Schema.Types.ObjectId }, 
-      questionText: { type: String },         // 👈 Naya
-      options: [{ type: String }],            // 👈 Naya
-      correctAnswerIndex: { type: Number },   // 👈 Naya
-      chosenAnswerIndex: { type: Number },    // 👈 Naya
+      questionText: { type: String },        // 👈 Naya
+      options: [{ type: String }],           // 👈 Naya
+      correctAnswerIndex: { type: Number },  // 👈 Naya
+      chosenAnswerIndex: { type: Number },   // 👈 Naya
       isCorrect: { type: Boolean },
       marksAwarded: { type: Number }
     }
@@ -39,6 +39,7 @@ const testAttemptSchema = new mongoose.Schema({
       // 🟢 'ref' hata diya
       questionId: { type: mongoose.Schema.Types.ObjectId }, 
       code: String,
+      language: String, // 👈 YAHAN ADD KIYA HAI: Language store karne ke liye
       testCasesPassed: Number, 
       totalTestCases: Number,  
       marksAwarded: Number

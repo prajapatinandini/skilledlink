@@ -13,11 +13,11 @@ exports.protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    console.log("DECODED TOKEN:", decoded); // 👈 ADD THIS
+    console.log("DECODED TOKEN:", decoded); 
 
     const user = await User.findById(decoded.id);
 
-    console.log("USER FROM DB:", user); // 👈 ADD THIS
+    console.log("USER FROM DB:", user); 
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
@@ -33,7 +33,6 @@ exports.protect = async (req, res, next) => {
 };
 
 
-// 🏢 Company Only Middleware
 exports.companyOnly = (req, res, next) => {
   if (!req.user || req.user.role !== "company") {
     return res.status(403).json({ message: "Company access only" });
@@ -42,7 +41,6 @@ exports.companyOnly = (req, res, next) => {
 };
 
 
-// 🎓 Student Only Middleware
 exports.studentOnly = (req, res, next) => {
   if (!req.user || req.user.role !== "student") {
     return res.status(403).json({ message: "Student access only" });
