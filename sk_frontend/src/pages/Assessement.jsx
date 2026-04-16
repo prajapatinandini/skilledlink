@@ -38,7 +38,7 @@ const Assessment = () => {
   const [codingProblems, setCodingProblems] = useState([]);
   const [codingIndex, setCodingIndex] = useState(0);
   const [codes, setCodes] = useState([]);
-  const [languages, setLanguages] = useState([]); // 🚀 NEW: Language State
+  const [languages, setLanguages] = useState([]); // 🚀 Language State
   const [codingTimeLeft, setCodingTimeLeft] = useState(2700);
 
   // --- PHASE 4: Result State ---
@@ -82,7 +82,6 @@ const Assessment = () => {
 
   // ================= 🚨 ULTRA-STRICT ANTI-CHEAT =================
   useEffect(() => {
-    // 🚀 SAFETY BUFFER: Page load hone ke 3 second baad tracking chalu hogi
     const setupTimer = setTimeout(() => {
       if (phase === "mcq" || phase === "coding") {
         setIsSystemReady(true);
@@ -211,7 +210,6 @@ const Assessment = () => {
       
       const addRes = await axios.post(`${API_URL}/api/projects/add-multiple`, { projects: projectsPayload }, getAuthHeader());
 
-      // Fullscreen
       const elem = document.documentElement;
       if (elem.requestFullscreen) elem.requestFullscreen().catch(e => console.log(e));
 
@@ -246,7 +244,7 @@ const Assessment = () => {
   
   const nextMCQ = () => {
     if (index === mcqData.length - 1) { 
-      // 🚀 NEW: Confirmation alert before submitting MCQ
+      // 🚀 Confirmation alert before submitting MCQ
       const isSure = window.confirm("You are on the last question. Do you want to submit the Aptitude section and start Coding? You cannot come back.");
       if (isSure) {
         submitAptitudePhase(); 
@@ -265,7 +263,7 @@ const Assessment = () => {
       setCodingProblems(codeRes.data);
       setCodes(codeRes.data.map(q => q.defaultCode || "// Write code here...\n"));
       
-      // 🚀 NEW: Initialize all coding languages to 'javascript' by default
+      // 🚀 Initialize all coding languages to 'javascript' by default
       setLanguages(codeRes.data.map(() => "javascript")); 
 
       setPhase("coding");
@@ -284,7 +282,7 @@ const Assessment = () => {
     setCodes(newCodes);
   };
 
-  // 🚀 NEW: Handler for Language Dropdown
+  // 🚀 Handler for Language Dropdown
   const handleLanguageChange = (e) => {
     const newLanguages = [...languages];
     newLanguages[codingIndex] = e.target.value;
@@ -302,7 +300,7 @@ const Assessment = () => {
       setLoading(true);
       setLoadingText("Saving Coding Answers... 💾");
       
-      // 🚀 NEW: Include language in the payload sent to backend
+      // 🚀 Include language in the payload sent to backend
       const codingAnswers = codingProblems.map((prob, i) => ({ 
         questionId: prob._id, 
         code: codes[i],
@@ -435,7 +433,7 @@ const Assessment = () => {
 
           {phase === "coding" && (
             <div>
-              {/* 🚀 NEW: Title and Language Dropdown in the same row */}
+              {/* 🚀 Title and Language Dropdown in the same row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <h3 style={{ margin: 0 }}>{codingProblems[codingIndex].title}</h3>
                 
@@ -447,7 +445,6 @@ const Assessment = () => {
                 >
                   <option value="javascript">JavaScript (Node.js)</option>
                   <option value="python">Python 3</option>
-                  <option value="cpp">C++</option>
                 </select>
               </div>
 

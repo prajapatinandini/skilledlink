@@ -3,7 +3,7 @@ const TestAttempt = require("../models/TestAttempt");
 const User = require("../models/User"); 
 const Project = require("../models/Project");
 const { VM } = require("vm2"); 
-const { spawn } = require("child_process");
+const axios = require("axios"); // 👈 Ye add karna mat bhoolna
 
 exports.startTest = async (req, res) => {
   try {
@@ -244,6 +244,29 @@ exports.getCodingQuestions = async (req, res) => {
   }
 };
 
+// ================= PISTON API HELPER FUNCTION (NO DOCKER NEEDED) =================
+const runCodeViaAPI = async (code, language = "javascript") => {
+  try {
+    // Language aur uski version API ke hisaab se set ki
+    const langConfig = language.toLowerCase() === "python" ? "python" : "javascript";
+    const versionConfig = language.toLowerCase() === "python" ? "3.10.0" : "18.15.0";
+
+    const response = await axios.post("https://emkc.org/api/v2/piston/execute", {
+      language: langConfig,
+      version: versionConfig,
+      files: [{ content: code }]
+    });
+
+    if (response.data.run.code !== 0) {
+      throw new Error(response.data.run.stderr || "Code Execution Failed");
+    }
+
+    return response.data.run.stdout.trim();
+  } catch (error) {
+    throw new Error(error.response?.data?.message || error.message);
+  }
+};
+
 
 // ================= CODING SUBMIT =================
 exports.submitCoding = async (req, res) => {
@@ -276,7 +299,7 @@ exports.submitCoding = async (req, res) => {
 
       let passed = 0;
       let questionLogs = [];
-      const language = ans.language || "javascript"; // Language schema se aayegi
+      const language = ans.language || "javascript"; // Frontend se aayi language
 
       if (question.testCases && question.testCases.length > 0) {
         for (let t of question.testCases) {
@@ -285,9 +308,9 @@ exports.submitCoding = async (req, res) => {
             cleanInput = cleanInput.replace(/[a-zA-Z]+\s*=\s*/g, '');
             cleanInput = cleanInput.replace(/\n/g, ',');
 
-            // 🚀 DOCKER KE LIYE CODE WRAP KAREIN 🚀
-            // Kyunki Docker me return value seedha nahi milti, hume console.log karwana padega
+            // 🚀 LANGUAGE KE HISAAB SE CODE WRAP KAREIN 🚀
             let wrappedCode = "";
+            
             if (language === "javascript") {
                 wrappedCode = `
                 ${ans.code}
@@ -298,12 +321,30 @@ exports.submitCoding = async (req, res) => {
                   console.error(e.message);
                   process.exit(1);
                 }`;
+            } 
+            else if (language.toLowerCase() === "python") {
+                wrappedCode = `
+import json
+import sys
+
+${ans.code}
+
+try:
+    result = solution(${cleanInput})
+    if result is not None:
+        print(json.dumps(result).replace(' ', ''))
+    else:
+        print("undefined")
+except Exception as e:
+    print(str(e), file=sys.stderr)
+    sys.exit(1)
+`;
             }
 
-            questionLogs.push(`Code Running: solution(${cleanInput});`); 
+            questionLogs.push(`Running ${language} code via API: solution(${cleanInput})`); 
 
-            // 🟢 AWAIT DOCKER EXECUTION 🟢
-            const resultOutput = await runCodeInDocker(wrappedCode, language);
+            // 🟢 AWAIT PISTON API EXECUTION 🟢
+            const resultOutput = await runCodeViaAPI(wrappedCode, language);
 
             const actualOutput = resultOutput.replace(/\s/g, '');
             const expectedOutput = String(t.expectedOutput).replace(/\s/g, '');
@@ -315,7 +356,7 @@ exports.submitCoding = async (req, res) => {
               questionLogs.push(`❌ Failed: Expected ${expectedOutput}, Got ${actualOutput}`);
             }
           } catch (err) {
-            questionLogs.push(`⚠️ Docker/Code Error: ${err.message}`);
+            questionLogs.push(`⚠️ API/Code Error: ${err.message}`);
           }
         }
       } else { 
@@ -467,56 +508,3 @@ exports.saveAssessmentProjects = async (req, res) => {
   }
 };
 
-// ================= DOCKER HELPER FUNCTION =================
-const runCodeInDocker = (code, language = "javascript") => {
-  return new Promise((resolve, reject) => {
-    // Default JS ke liye
-    let dockerImage = "node:18-alpine"; 
-    let command = "node";
-
-    // Agar Python support karna ho toh (Future proofing):
-    if (language.toLowerCase() === "python") {
-        dockerImage = "python:3.9-alpine";
-        command = "python";
-    }
-
-    // Docker command banayenge: Network disabled, memory limited
-    const docker = spawn("docker", [
-      "run", 
-      "--rm",               // Execution ke baad container delete kar do
-      "-i",                 // Interactive (stdin open rakhne ke liye)
-      "--network", "none",  // No internet inside container (ANTI-CHEAT)
-      "--memory", "128m",   // Max 128MB RAM
-      "--cpus", "0.5",      // Max 50% of 1 CPU core
-      dockerImage, 
-      command
-    ]);
-
-    let output = "";
-    let errorOutput = "";
-
-    // Code ko Docker ke STDIN mein bhejo
-    docker.stdin.write(code);
-    docker.stdin.end();
-
-    // Output capture karo
-    docker.stdout.on("data", (data) => { output += data.toString(); });
-    docker.stderr.on("data", (data) => { errorOutput += data.toString(); });
-
-    // ⏳ Timeout logic (Docker container start hone mein thoda time lagta hai isliye 3000ms)
-    const timeout = setTimeout(() => {
-      docker.kill();
-      reject(new Error("Timeout: Code took too long to execute (Infinite loop or heavy process)"));
-    }, 3000); 
-
-    // Container band hone par
-    docker.on("close", (exitCode) => {
-      clearTimeout(timeout);
-      if (exitCode !== 0) {
-        reject(new Error(errorOutput.trim() || "Execution failed/crashed"));
-      } else {
-        resolve(output.trim());
-      }
-    });
-  });
-};
