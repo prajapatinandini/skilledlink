@@ -130,12 +130,25 @@ exports.getTalentPoolData = async (req, res) => {
 exports.getJobAttempts = async (req, res) => {
   try {
     const { jobId } = req.params;
+    
+    // 1. Fetch attempts with necessary fields
     const attempts = await TestAttempt.find({ company: jobId }) 
       .populate("student", "name email profilePhoto resumeUrl")
       .lean(); 
       
     const attemptsWithProfiles = await Promise.all(
       attempts.map(async (attempt) => {
+        // --- 🚀 LANGUAGES EXTRACTION START ---
+        // Har question ki language ko collect karke ek Unique list banana
+        // Taki agar 3 questions hain, toh Admin ko dikhe: ["JAVASCRIPT", "PYTHON"]
+        if (attempt.codingAnswers && attempt.codingAnswers.length > 0) {
+          const usedLanguages = [...new Set(attempt.codingAnswers.map(ans => ans.language))].filter(Boolean);
+          attempt.languagesUsed = usedLanguages; 
+        } else {
+          attempt.languagesUsed = [];
+        }
+        // --- 🚀 LANGUAGES EXTRACTION END ---
+
         if (attempt.student && attempt.student._id) {
           const profile = await StudentProfile.findOne({ user: attempt.student._id }).lean();
           if (profile) {

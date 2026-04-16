@@ -12,7 +12,6 @@ const HistoryModal = ({
   onSelectApplicant,
   onClose
 }) => {
-  // Local states for data
   const [histData, setHistData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,7 +23,6 @@ const HistoryModal = ({
       try {
         setLoading(true);
         const token = localStorage.getItem("token"); 
-
         const jobId = historyJob._id || historyJob.id;
         
         const res = await axios.get(`${API_URL}/api/dashboard/attempts/${jobId}`, {
@@ -54,18 +52,25 @@ const HistoryModal = ({
             ? (String(rawResume).startsWith('http') ? rawResume : `${API_URL}${rawResume}`)
             : null;
 
+          // 🚀 3. EXTRACT LANGUAGES USED
+          // Har attempt ke codingAnswers array se unique languages nikal rahe hain
+          const usedLanguages = attempt.codingAnswers 
+            ? [...new Set(attempt.codingAnswers.map(ans => ans.language?.toUpperCase()))].filter(Boolean)
+            : [];
+
           return {
             id: attempt._id,
             name: finalName,
             email: attempt.student?.email || "No Email",
             img: finalImg,
-            resumeUrl: finalResume, // Resume link save kar liya
+            resumeUrl: finalResume,
             status: currentStatus,
             date: new Date(attempt.createdAt).toLocaleDateString('en-GB'),
             quiz: Math.round(attempt.aptitudeScore || 0),
             coding: Math.round(safeCodingScore),
             project: Math.round(attempt.projectScore || 0),
             final: Math.round(attempt.finalScore || 0),
+            languages: usedLanguages, // 👈 Frontend mein dikhane ke liye languages array
             rawAttemptData: attempt
           };
         });
@@ -106,7 +111,7 @@ const HistoryModal = ({
       alert(res.data.message || `Status updated to ${newStatus} and email sent! 📧`);
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Failed to update status. Make sure backend route is correct.");
+      alert("Failed to update status.");
     }
   };
 
@@ -144,7 +149,6 @@ const HistoryModal = ({
           })}
         </div>
 
-        {/* Loading State UI */}
         {loading ? (
           <div className="history-empty" style={{ padding: "40px 0", color: "#666" }}>
             Loading applicants data... ⏳
@@ -168,7 +172,6 @@ const HistoryModal = ({
                 
                 <div className="history-info" style={{ flex: 1 }}>
                   
-                  {/* 🟢 NAME AND DROPDOWN */}
                   <div className="history-name-row" style={{ display: "flex", alignItems: "center", gap: "15px", flexWrap: "wrap" }}>
                     <span className="history-name">{a.name}</span>
                     
@@ -191,13 +194,12 @@ const HistoryModal = ({
                       <option value="Rejected">Rejected</option>
                     </select>
 
-                    {/* 🚀 QUICK RESUME BUTTON (Direct Download) */}
                     {a.resumeUrl && (
                       <a 
                         href={a.resumeUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()} // Taaki row click trigger na ho
+                        onClick={(e) => e.stopPropagation()} 
                         style={{
                           background: "#f3f0ff", color: "#553f9a", border: "1px solid #d8d0f5",
                           padding: "4px 10px", borderRadius: "6px", fontSize: "11px", fontWeight: "bold",
@@ -221,6 +223,21 @@ const HistoryModal = ({
                     <ScoreBar label="Quiz" value={a.quiz} />
                     <ScoreBar label="Coding" value={a.coding} />
                     <ScoreBar label="Project" value={a.project} />
+
+                    {/* 🚀 LANGUAGES BADGES DISPLAY */}
+                    {a.languages && a.languages.length > 0 && (
+                      <div style={{ display: "flex", gap: "5px", alignItems: "center" }}>
+                        {a.languages.map((lang, idx) => (
+                          <span key={idx} style={{
+                            background: "#e0f2f1", color: "#00796b", border: "1px solid #b2dfdb",
+                            padding: "2px 8px", borderRadius: "10px", fontSize: "10px", fontWeight: "bold",
+                            textTransform: "uppercase"
+                          }}>
+                            {lang}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     
                     <div style={{
                       marginLeft: "auto", background: "linear-gradient(135deg, #553f9a, #7b5fc4)",
