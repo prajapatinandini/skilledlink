@@ -907,9 +907,26 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
                           flexWrap: "wrap",
                           gap: "8px"
                         }}>
-                          <span style={{ color: "#553f9a", fontSize: "13px", fontWeight: 700 }}>
-                            Student's Submitted Code
-                          </span>
+                          
+                          {/* 🚀 NEW: Language Badge added next to the title */}
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <span style={{ color: "#553f9a", fontSize: "13px", fontWeight: 700 }}>
+                              Student's Submitted Code
+                            </span>
+                            <span style={{
+                              background: "#e0f2f1", 
+                              color: "#00796b", 
+                              border: "1px solid #b2dfdb",
+                              padding: "2px 8px", 
+                              borderRadius: "10px", 
+                              fontSize: "10px", 
+                              fontWeight: "bold",
+                              textTransform: "uppercase"
+                            }}>
+                              {c.language || "JAVASCRIPT"}
+                            </span>
+                          </div>
+
                           <span style={{ color: "#6b7280", fontSize: "12px" }}>
                             ⏱ Time taken: {c.timeTaken}
                           </span>
