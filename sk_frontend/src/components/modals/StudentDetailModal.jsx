@@ -36,15 +36,16 @@ const StudentDetailModal = ({ applicant, onBack, onClose }) => {
     chosen: q.chosenAnswerIndex || 0,
     isCorrect: q.correctAnswerIndex === q.chosenAnswerIndex
   }));
-
-  // 4. CODING MAPPING
+// 4. CODING MAPPING
   const coding = (raw.codingAnswers || []).map((c, i) => ({
     passed: c.testCasesPassed === c.totalTestCases && c.totalTestCases > 0,
     title: c.questionId?.title || `Problem ${i + 1}`,
     problem: c.questionId?.description || "Description not available",
     difficulty: c.questionId?.difficulty || "Medium",
     studentCode: c.code || "// No code submitted",
-    timeTaken: "N/A" 
+    timeTaken: "N/A",
+    // 🚀 👇 YAHAN LANGUAGE ADD KI GAYI HAI 👇 🚀
+    language: c.language ? c.language.toUpperCase() : "JAVASCRIPT" 
   }));
 
   const quizCorrect = quiz.filter(q => q.isCorrect).length;
