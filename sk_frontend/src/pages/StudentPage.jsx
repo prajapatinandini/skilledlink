@@ -14,6 +14,29 @@ const renderSafe = (val) => {
   return String(val);
 };
 
+// ✅ Naya Helper Function - Dynamic Countdown ke liye
+const getRealDaysLeft = (job) => {
+  if (!job) return 0;
+  
+  // Agar backend mein expiryDate set hai
+  if (job.expiryDate) {
+      const diff = new Date(job.expiryDate) - new Date();
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+  
+  // Agar sirf static daysLeft aur createdAt hai (Smart Trick)
+  if (job.createdAt && job.daysLeft !== undefined) {
+      const createdDate = new Date(job.createdAt);
+      const expiryDate = new Date(createdDate);
+      expiryDate.setDate(createdDate.getDate() + Number(job.daysLeft)); 
+      
+      const diff = expiryDate - new Date();
+      return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
+  
+  return job.daysLeft || 0; // Fallback
+};
+
 // 🟢 PROFILE VIEW COMPONENT
 const ProfileView = ({ profile, onEdit }) => {
   if (!profile) return <div style={{ padding: '20px', textAlign: 'center' }}>Profile details load ho rahi hain...</div>;
@@ -264,7 +287,10 @@ const StudentPage = () => {
                   <h3 style={{ color: '#2d1f6e', marginBottom: '20px' }}>Available Openings</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
                     {jobsData.filter(j => j.company?._id === selectedCompany?._id).map((job) => {
-                      const isExpired = job.daysLeft <= 0;
+                      // ✅ NAYA DYNAMIC CALCULATION
+                      const realDaysLeft = getRealDaysLeft(job);
+                      const isExpired = realDaysLeft <= 0;
+                      
                       return (
                         <div key={job._id} 
                           style={{ 
@@ -284,7 +310,7 @@ const StudentPage = () => {
                           <div style={{ display: 'flex', justifyContent: 'space-between', color: '#666', fontSize: '14px' }}>
                             <span>💰 {job.salary}</span>
                             <span style={{ color: isExpired ? '#ef4444' : '#1890ff', fontWeight: 'bold' }}>
-                               {isExpired ? '⌛ Closed' : `⌛ ${job.daysLeft} Days Left`}
+                               {isExpired ? '⌛ Closed' : `⌛ ${realDaysLeft} Days Left`}
                             </span>
                           </div>
                           <button style={{ ...viewBtnStyle, background: isExpired ? '#fef2f2' : '#f8faff', marginTop: '15px' }}>Check Details</button>
@@ -300,7 +326,10 @@ const StudentPage = () => {
                   <button onClick={() => setViewLevel("JOB_LIST")} style={backLinkStyle}>← Back to All Roles</button>
                   
                   {(() => {
-                    const isExpired = selectedJob.daysLeft <= 0;
+                    // ✅ NAYA DYNAMIC CALCULATION
+                    const realDaysLeft = getRealDaysLeft(selectedJob);
+                    const isExpired = realDaysLeft <= 0;
+                    
                     return (
                       <>
                         <div style={detailHeaderStyle}>
@@ -313,7 +342,7 @@ const StudentPage = () => {
                                 {isExpired ? (
                                    <span style={{ ...badgeStyle, background: '#fee2e2', color: '#ef4444' }}>🔴 Application Closed</span>
                                 ) : (
-                                   <span style={badgeStyle}>⌛ {selectedJob.daysLeft} Days Left</span>
+                                   <span style={badgeStyle}>⌛ {realDaysLeft} Days Left</span>
                                 )}
                             </div>
                           </div>
@@ -341,7 +370,6 @@ const StudentPage = () => {
                             <h4 style={{ margin: '0 0 15px 0', color: '#2d1f6e' }}>Assessment Rounds</h4>
                             <div style={roundCardStyle}>📂 1. Project Review</div>
                             
-                            {/* 🚀 THE UI FIX IS HERE 👇 */}
                             {selectedJob.quiz?.length > 0 && (
                               <div style={{ ...roundCardStyle, color: '#1890ff' }}>
                                 🧠 2. Aptitude Quiz ({Math.min(20, selectedJob.quiz.length)} Qs)
