@@ -299,7 +299,7 @@ const StudentProfile = () => {
               <input name="githubUsername" style={inputStyle} value={form.githubUsername} onChange={handleChange} />
             </div>
             <div className="field">
-              <label style={labelStyle}>Skills (Enter dabayein add karne ke liye)</label>
+              <label style={labelStyle}>Skills (press enter to add)</label>
               <div style={tagsContainerStyle}>
                 {form.skills.map((skill, index) => (
                   <div key={index} style={tagStyle}>
